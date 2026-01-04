@@ -1,0 +1,145 @@
+{% load static %}
+{% load navactive %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="description" content="Sirius A: The Study Association for Astronomy at the University of Groningen">
+    <meta name="keywords" content="Sirius A, Astronomy, Study Association">
+
+    <title>AstroLink</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'img/astrolink_logo.png' %}">
+
+    <link rel="stylesheet" href="{% static 'css/reset.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+
+<body class="bg-light">
+    <div class="layout">
+    <!-- SIDEBAR -->
+    <nav id="sidebar" class="bg-white shadow-sm border-end">
+        <div class="sidebar-header d-flex align-items-center p-3">
+            <img src="{% static 'img/astrolink_logo.png' %}" class="logo me-2">
+            <span class="fw-bold fs-5">AstroLink</span>
+        </div>
+
+        <ul class="nav flex-column px-2">
+
+            <!-- Home -->
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% if request.resolver_match.url_name == 'astrolink:forum_home' %}active{% endif %}"
+                href="{% url 'astrolink:forum_home' %}">
+                    <i class="bi bi-house-door"></i> Home
+                </a>
+            </li>
+
+            <li><hr></li>
+
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'supervisor_list' 'supervisor_create' 'supervisor_update' 'supervisor_delete' %}"
+                href="{% url 'astrolink:supervisor_list' %}">
+                    <i class="bi bi-person-badge"></i> Supervisors
+                </a>
+            </li>
+
+            <!-- Projects -->
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'project_list' 'project_create' 'project_update' 'project_delete' %}"
+                href="{% url 'astrolink:project_list' %}">
+                    <i class="bi bi-folder"></i> Projects
+                </a>
+            </li>
+
+            <!-- Case Studies -->
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'casestudy_list' 'casestudy_create' 'casestudy_update' 'casestudy_delete' %}"
+                href="{% url 'astrolink:casestudy_list' %}">
+                    <i class="bi bi-journal"></i> Case Studies
+                </a>
+            </li>
+
+            <!-- Research Groups -->
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'researchgroup_list' 'researchgroup_create' 'researchgroup_update' 'researchgroup_delete' %}"
+                href="{% url 'astrolink:researchgroup_list' %}">
+                    <i class="bi bi-people"></i> Research Groups
+                </a>
+            </li>
+
+            <li><hr></li>
+
+            <!-- Applications -->
+            {% if can_manage_applications %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'application_list' 'application_create' 'application_update' 'application_delete' %}"
+                href="{% url 'astrolink:application_list' %}">
+                    <i class="bi bi-ui-checks"></i> Applications
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- Companies -->
+            {% if can_manage_companies %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'company_list' 'company_create' 'company_update' 'company_delete' %}"
+                href="{% url 'astrolink:company_list' %}">
+                    <i class="bi bi-building"></i> Companies
+                </a>
+            </li>
+            {% endif %}
+
+        </ul>
+
+    </nav>
+
+    <div class="main-section">
+        <header id="topbar" class="bg-white shadow-sm d-flex justify-content-between align-items-center">
+            <h1 class="h4 m-0">{{ page_title|default:"Home" }}</h1>
+
+            <button class="btn btn-outline-secondary d-lg-none" id="toggleSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        </header>
+        <main id="content">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.getElementById("toggleSidebar").addEventListener("click", function () {
+    document.getElementById("sidebar").classList.toggle("active");
+});
+</script>
+
+{% if messages %}
+<script>
+    {% for message in messages %}
+        Swal.fire({
+            icon: "{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}",
+            title: "Success",
+            text: "{{ message }}",
+            confirmButtonColor: "#4CAF50"
+        });
+    {% endfor %}
+</script>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Top Section -->
+    <div class="row mb-4 p-3 bg-light rounded shadow-sm">
+
+        <div class="col-md-8">
+            <h2>{{ case_study.title }}</h2>
+
+            <p class="text-muted">
+                <strong>Company: </strong>
+                <a href="{% url 'astrolink:company_detail' case_study.company.pk %}">
+                    {{ case_study.company.name }}
+                </a>
+            </p>
+
+            <p class="text-muted">
+                <strong>Time Estimate:</strong> {{ case_study.time_estimate }}
+            </p>
+
+            <a href="{% url 'astrolink:application_create' %}?case_study={{ case_study.pk }}" class="btn btn-primary">Apply for this Case Study</a>
+
+            <hr>
+
+            <h5>Description</h5>
+            <p>{{ case_study.description|linebreaks }}</p>
+
+            {% if case_study.revenue_split_notes %}
+                <hr>
+                <h5>Revenue Split Notes</h5>
+                <p>{{ case_study.revenue_split_notes|linebreaks }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Logo -->
+        <div class="col-md-4 text-center">
+            {% if case_study.logo %}
+                <img src="{{ case_study.logo.url }}"
+                     class="img-fluid rounded shadow"
+                     style="max-height: 240px; object-fit: contain;">
+            {% else %}
+                <div class="bg-secondary text-white p-5 rounded">
+                    No Logo Available
+                </div>
+            {% endif %}
+
+            <p class="text-muted mt-3">
+                <small>
+                    Created: {{ case_study.created_at|date:"Y-m-d" }}<br>
+                    Last Updated: {{ case_study.last_updated_at|date:"Y-m-d" }}
+                </small>
+            </p>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

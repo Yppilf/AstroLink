@@ -1,0 +1,96 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Top section -->
+    <div class="row mb-4 p-3 bg-light rounded shadow-sm">
+        <div class="col-md-8">
+
+            <h2>{{ company.name }}</h2>
+
+            {% if can_view_contact %}
+                <p class="text-muted mb-1"><strong>Email:</strong> {{ company.email }}</p>
+                <p class="text-muted mb-1"><strong>Contact Name:</strong> {{ company.contact_name }}</p>
+
+                {% if company.contact_phone %}
+                <p class="text-muted mb-1"><strong>Contact Phone:</strong> {{ company.contact_phone }}</p>
+                {% endif %}
+            {% endif %}
+
+            {% if company.website %}
+                <p><a href="{{ company.website }}" target="_blank">Website</a></p>
+            {% endif %}
+
+            <p class="text-muted mb-1"><strong>Status:</strong> {{ company.get_status_display }}</p>
+
+            <hr>
+            <h5>Description</h5>
+            <p>{{ company.description|linebreaks }}</p>
+
+        </div>
+
+        <!-- Logo -->
+        <div class="col-md-4 text-center">
+            {% if company.logo %}
+                <img src="{{ company.logo.url }}"
+                     class="img-fluid rounded shadow"
+                     style="max-height: 240px; object-fit: contain;">
+            {% else %}
+                <div class="bg-secondary text-white p-5 rounded">
+                    No Logo Available
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Case Studies Section -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="m-0">Case Studies</h5>
+                    {% if can_create_casestudy %}
+                        <a href="{% url 'astrolink:casestudy_create' %}?company={{ company.pk }}&next={% url 'company_detail' company.pk %}" 
+                            class="btn btn-sm btn-light">+ Add Case Study</a>
+                    {% endif %}
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    {% for cs in case_studies %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+
+                            <!-- Left: clickable title + truncated description -->
+                            <div class="me-auto">
+                                <a href="{% url 'astrolink:casestudy_detail' cs.pk %}" class="fw-bold text-decoration-none">
+                                    {{ cs.title }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ cs.description|truncatewords:20 }}</small>
+                            </div>
+
+                            <!-- Right: Edit/Delete -->
+                            <div class="ms-3 d-flex flex-column">
+                                {% if can_edit_casestudy %}
+                                <a href="{% url 'astrolink:casestudy_update' cs.pk %}?next={% url 'astrolink:company_detail' company.pk %}" 
+                                   class="btn btn-sm btn-outline-secondary mb-1">Edit</a>
+                                {% endif %}
+                                {% if can_delete_casestudy %}
+                                <a href="{% url 'astrolink:casestudy_delete' cs.pk %}?next={% url 'astrolink:company_detail' company.pk %}" 
+                                   class="btn btn-sm btn-outline-danger">Delete</a>
+                                {% endif %}
+                            </div>
+
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted">
+                            No case studies for this company.
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

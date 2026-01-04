@@ -1,0 +1,106 @@
+{% extends "forum/base.html" %}
+{% block content %}
+
+<div class="container-fluid px-4">
+    <h2 class="mb-4 fw-bold">Welcome to AstroLink</h2>
+
+    <p class="text-muted mb-5">
+        Explore resources, connect with supervisors, browse research initiatives, and discover academic project opportunities.
+    </p>
+
+    <div class="row g-4">
+
+        <!-- Projects -->
+        <div class="col-md-4">
+            <a href="{% url 'astrolink:project_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-folder-fill fs-2 me-3 text-primary"></i>
+                            <h5 class="card-title mb-0">Projects</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            Browse available academic and industry projects, filter by topic, and explore collaboration opportunities.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Apply -->
+        <div class="col-md-4">
+            <a href="{% url 'astrolink:application_create' %}?next={% url 'astrolink:forum_home' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-pencil-square fs-2 me-3 text-info"></i>
+                            <h5 class="card-title mb-0">Apply</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            Start an application for a project, case study, or submit a general proposal of your own.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Case Studies -->
+        <div class="col-md-4">
+            <a href="{% url 'astrolink:casestudy_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-journal-bookmark-fill fs-2 me-3 text-warning"></i>
+                            <h5 class="card-title mb-0">Case Studies</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            Read detailed case studies documenting real-world applications and student experiences.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Second Row -->
+    <div class="row g-4 mt-2">
+
+        <!-- Research Groups -->
+        <div class="col-md-6">
+            <a href="{% url 'astrolink:researchgroup_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-diagram-3-fill fs-2 me-3 text-success"></i>
+                            <h5 class="card-title mb-0">Research Groups</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            Discover active research groups, their focus areas, publications, and current members.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Supervisors -->
+        <div class="col-md-6">
+            <a href="{% url 'astrolink:supervisor_list' %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-person-badge-fill fs-2 me-3 text-danger"></i>
+                            <h5 class="card-title mb-0">Supervisors</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            View all supervisors, their expertise areas, and their available project offerings.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

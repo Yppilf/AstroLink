@@ -1,0 +1,54 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- Header card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+            <h2 class="mb-0">{{ project.title }}</h2>
+
+            <p class="text-muted mt-2">
+                Supervisor:
+                <a href="{% url 'astrolink:supervisor_detail' project.supervisor.pk %}">
+                    {{ project.supervisor.name }}
+                </a>
+            </p>
+
+            <a href="{% url 'astrolink:application_create' %}?project={{ project.pk }}" class="btn btn-primary">Apply for this Project</a>
+
+
+            <div class="mt-3">
+                {% if project.time_estimate %}
+                    <span class="badge bg-secondary">
+                        Estimated: {{ project.time_estimate }}
+                    </span>
+                {% endif %}
+
+                <div class="text-muted mt-2">
+                    <small>
+                        Created: {{ project.created_at|date:"Y-m-d" }} <br>
+                        Last updated: {{ project.last_updated_at|date:"Y-m-d" }}
+                    </small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5>Description</h5>
+            <hr>
+            <p style="white-space: pre-line;">
+                {{ project.description }}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
