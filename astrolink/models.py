@@ -12,7 +12,7 @@ class Reference(models.Model):
     link = models.CharField(max_length=256, null=True, blank=True)
 
     def __str__(self):
-        return f"Reference from {self.supervisor.user.display_name()}"
+        return self.title
 
 class Project(models.Model):
     title = models.CharField(max_length=200)

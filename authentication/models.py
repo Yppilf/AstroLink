@@ -117,6 +117,9 @@ class BaseProfile(models.Model):
     def email(self):
         """Return the email of the associated user"""
         return self.user.email
+    
+    def __str__(self):
+        return self.user.display_name()
 
 def supervisor_profile_picture_path(instance, filename):
     return f"supervisors/{instance.user.id}/{filename}"

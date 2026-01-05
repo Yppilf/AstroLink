@@ -181,10 +181,10 @@ def supervisor_detail(request, pk):
 # -----------------------------------------------
 @external_user_permissions_required("read_project")
 def project_list(request):
-    can_create = has_permission(request.user, "create_project")
+    can_create = False
     can_view = has_permission(request.user, "read_project")
-    can_update = has_permission(request.user, "update_project")
-    can_delete = has_permission(request.user, "delete_roject")
+    can_update = False
+    can_delete = False 
 
     return generic_list_view(
         request,
@@ -200,18 +200,29 @@ def project_list(request):
 
 @external_user_permissions_required("create_project", "update_project")
 def project_form(request, pk=None):
-    instance = Project.objects.filter(pk=pk).first()
+    user_profile = getattr(request.user, "supervisorprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden("You are not allowed to manage projects.")
+
+    instance = Project.objects.filter(pk=pk, supervisor=user_profile).first()
+    # ensures a supervisor cannot edit someone else's project
+
     return generic_form_view(
         request,
         ProjectForm,
         instance,
         "Edit Project" if instance else "Create Project",
-        url_prefix="project"
+        url_prefix="project",
+        form_kwargs={"supervisor": user_profile}
     )
 
 @external_user_permissions_required("delete_project")
 def project_delete(request, pk):
-    instance = get_object_or_404(Project, pk=pk)
+    user_profile = getattr(request.user, "supervisorprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden("You are not allowed to delete projects.")
+
+    instance = get_object_or_404(Project, pk=pk, supervisor=user_profile)
     return generic_delete_view(request, instance, "Project", url_prefix="project")
 
 @external_user_permissions_required("read_project", "read_supervisor")
@@ -401,7 +412,11 @@ def reference_form(request, pk=None):
 
 @external_user_permissions_required("delete_reference")
 def reference_delete(request, pk):
-    instance = get_object_or_404(Reference, pk=pk)
+    user_profile = getattr(request.user, "supervisorprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden("You are not allowed to delete references.")
+
+    instance = get_object_or_404(Reference, pk=pk, supervisor=user_profile)
     return generic_delete_view(request, instance, "Reference", url_prefix="reference")
 
 

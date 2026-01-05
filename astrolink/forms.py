@@ -39,18 +39,27 @@ class ReferenceForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
-    supervisor = forms.ModelChoiceField(
-        queryset=SupervisorProfile.objects.select_related("user").all(),
-        label="Supervisor",
-        empty_label="Select a Supervisor"
-    )
-
     class Meta:
         model = Project
-        fields = ['title', 'description', 'supervisor', 'time_estimate']
+        fields = ['title', 'description', 'time_estimate']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }
+
+    def __init__(self, *args, supervisor=None, **kwargs):
+        self.supervisor = supervisor
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        # assign supervisor on creation
+        if not obj.pk:
+            if self.supervisor is None:
+                raise ValueError("Supervisor must be provided to save a new Project.")
+            obj.supervisor = self.supervisor
+        if commit:
+            obj.save()
+        return obj
 
 class CompanyForm(forms.ModelForm):
     class Meta:
