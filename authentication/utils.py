@@ -1,5 +1,5 @@
-from .models import User, StudentProfile, SupervisorProfile
-from .forms import StudentProfileForm, SupervisorProfileForm
+from .models import User, StudentProfile, SupervisorProfile, AssociationProfile
+from .forms import StudentProfileForm, SupervisorProfileForm, AssociationProfileForm
 
 PROFILE_REGISTRY = {
     "Student": {
@@ -15,6 +15,11 @@ PROFILE_REGISTRY = {
             "references": profile.references.all(),
             "projects": profile.projects.all(),
         }
+    },
+    "Association": {
+        "model": AssociationProfile,
+        "form": AssociationProfileForm,
+        "label": "Association",
     },
 }
 

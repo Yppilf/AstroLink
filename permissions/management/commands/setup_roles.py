@@ -12,6 +12,7 @@ class Command(BaseCommand):
         permission_map = {}
         roles = ['System Admin', 
                  'Supervisor',
+                 'Association',
                  'Own Data', 
                  'Student',
                  'External User', 
@@ -75,6 +76,17 @@ class Command(BaseCommand):
                 'create_application', 'read_application', 'update_application', 'delete_application',
             ], 
             'Supervisor': [
+                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
+                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
+                'create_project', 'read_project', 'update_project', 'delete_project',
+                'create_company', 'read_company', 'update_company', 'delete_company',
+                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
+                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
+                'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
+                'create_application', 'read_application', 'update_application', 'delete_application',
+                # TODO
+            ],  
+            'Association': [
                 'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_project', 'read_project', 'update_project', 'delete_project',

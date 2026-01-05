@@ -135,3 +135,11 @@ class StudentProfile(BaseProfile):
     level = models.CharField(max_length=64, null=True, blank=True)
     study_programme = models.CharField(max_length=128, blank=True)    
 
+def association_profile_picture_path(instance, filename):
+    return f"associations/{instance.user.id}/{filename}"
+
+class AssociationProfile(BaseProfile):
+    biography = models.TextField(blank=True)
+    website = models.CharField(max_length=64, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to=association_profile_picture_path,null=True,blank=True)
+
