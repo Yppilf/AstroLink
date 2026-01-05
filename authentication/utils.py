@@ -26,3 +26,13 @@ def assign_role(user, role):
     profile_model.objects.get_or_create(user=user)
 
 
+def model_to_field_pairs(instance, exclude=None):
+    exclude = exclude or []
+    data = []
+    for field in instance._meta.fields:
+        if field.name in exclude:
+            continue
+        value = getattr(instance, field.name)
+        if value not in ("", None):
+            data.append((field.verbose_name.title(), value))
+    return data

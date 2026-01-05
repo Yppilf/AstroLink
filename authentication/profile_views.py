@@ -4,7 +4,7 @@ from .models import User, Role
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .utils import PROFILE_REGISTRY
+from .utils import PROFILE_REGISTRY, model_to_field_pairs
 from .forms import UserProfileForm
 
 @login_required
@@ -24,16 +24,29 @@ def profile_detail(request, username):
         profile_model = registry_entry["model"]
         profile = profile_model.objects.filter(user=profile_user).first()
 
-    return render(
-        request,
-        "authentication/profiles/profile_detail.html",
-        {
-            "profile_user": profile_user,
-            "profile": profile,
-            "role": role_name,
-            "active_tab": request.GET.get("tab", "overview"),
-        },
+    user_fields = model_to_field_pairs(
+        profile_user,
+        exclude=[
+            "id", "password", "last_login",
+            "is_active", "is_staff", "legal_name", "username", "is_superuser"
+        ]
     )
+
+    profile_fields = []
+    if profile:
+        profile_fields = model_to_field_pairs(
+            profile,
+            exclude=["id", "user", "created_at", "updated_at", "profile_picture"]
+        )
+
+    return render(request, "authentication/profiles/profile_detail.html", {
+        "profile_user": profile_user,
+        "profile": profile,
+        "role": role_name,
+        "active_tab": request.GET.get("tab", "overview"),
+        "user_fields": user_fields,
+        "profile_fields": profile_fields,
+    })
 
 @login_required
 def edit_profile(request):
@@ -87,6 +100,6 @@ def edit_profile(request):
             "extra_form": profile_form,
             "title": "Edit profile",
             "submit_text": "Save changes",
-            "cancel_url": reverse("authentication:my_profile"),
+            "list_url": reverse("authentication:my_profile"),
         },
     )

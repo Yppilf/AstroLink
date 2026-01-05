@@ -23,6 +23,16 @@
                     <p class="mb-0">{{ profile.biography }}</p>
                 {% endif %}
             </div>
+
+            {% if request.user == profile_user %}
+                <div class="ms-auto">
+                    <a href="{% url 'authentication:edit_profile' %}"
+                    class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit profile
+                    </a>
+                </div>
+            {% endif %}
+
         </div>
     </div>
 
@@ -55,7 +65,7 @@
         <div class="card-body">
 
             {% if active_tab == 'overview' %}
-                <p>This is the public overview tab.</p>
+                {% include "authentication/profiles/overviews/overview_base.html" %}
 
             {% elif active_tab == 'data' %}
                 {% include "authentication/profiles/tabs/profile_data.html" %}
@@ -66,14 +76,5 @@
 
         </div>
     </div>
-
-    {% if request.user == profile_user %}
-        <a href="{% url 'authentication:edit_profile' %}"
-        class="btn btn-primary btn-sm">
-            Edit profile
-        </a>
-    {% endif %}
-
-
 </div>
 {% endblock %}

@@ -1,0 +1,7 @@
+<h5>About</h5>
+
+{% if profile.biography %}
+    <p>{{ profile.biography }}</p>
+{% else %}
+    <p class="text-muted">No biography provided.</p>
+{% endif %}
