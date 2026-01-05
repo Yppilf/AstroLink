@@ -50,7 +50,6 @@ def generic_list_data(
     object_name,
     url_prefix,
     columns=None,
-    per_page=10,
     can_view=True,
     can_update=True,
     can_delete=True,
@@ -59,6 +58,7 @@ def generic_list_data(
     page = int(request.GET.get("page", 1))
     sort = request.GET.get("sort")
     order = request.GET.get("order", "asc")
+    per_page = int(request.GET.get("per_page", 10))
 
     model = queryset.model
     annotations = {}
@@ -244,7 +244,6 @@ def supervisor_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 @external_user_permissions_required("read_supervisor")
@@ -290,7 +289,6 @@ def project_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 @external_user_permissions_required("create_project", "update_project")
@@ -368,7 +366,6 @@ def company_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 
@@ -450,7 +447,6 @@ def casestudy_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 
@@ -518,7 +514,6 @@ def researchgroup_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 
@@ -596,7 +591,7 @@ def application_list(request):
         Application.objects.all(),
         "Application",
         url_prefix="application",
-        columns=["display_member", "current_status"],
+        columns=["member_name", "current_status"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -624,7 +619,6 @@ def application_list_data(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
-        per_page=10,
     )
 
 
