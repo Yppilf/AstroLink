@@ -90,6 +90,7 @@ def generic_list_view(
         "page_title": f"{object_name} List",
         "search": search,
         "can_create": can_create,
+        "has_actions": can_update or can_delete,
     })
 
 def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None):
