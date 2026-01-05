@@ -194,7 +194,6 @@ def generic_delete_view(request, instance, object_name, url_prefix):
 # ----
 # Home
 # ----
-@external_user_permissions_required("read_supervisor")
 def forum_home(request):
     return render(request, "forum/forum_homepage.html")
 

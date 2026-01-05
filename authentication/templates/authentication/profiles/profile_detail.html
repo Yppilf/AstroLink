@@ -46,16 +46,14 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'data' %}active{% endif %}"
-               href="?tab=data">
-                Profile Data
-            </a>
+            <a class="nav-link {% if active_tab == 'applications' %}active{% endif %}"
+            href="?tab=applications">My Applications</a>
         </li>
 
         <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'other' %}active{% endif %}"
-               href="?tab=other">
-                Other
+            <a class="nav-link {% if active_tab == 'data' %}active{% endif %}"
+               href="?tab=data">
+                Profile Data
             </a>
         </li>
     </ul>
@@ -66,6 +64,9 @@
 
             {% if active_tab == 'overview' %}
                 {% include "authentication/profiles/overviews/overview_base.html" %}
+
+            {% elif active_tab == 'applications' %}
+                {% include "authentication/profiles/tabs/applications.html" %}
 
             {% elif active_tab == 'data' %}
                 {% include "authentication/profiles/tabs/profile_data.html" %}

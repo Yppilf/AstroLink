@@ -10,11 +10,11 @@
             <strong>Submitted for:</strong>
             {% if target %}
                 {% if target_type == "Project" %}
-                    <a href="{% url 'astrolink:project_detail' target.pk %}">
+                    <a href="{% url 'astrolink:project_detail' target.pk %}" target="_blank">
                         Project — {{ target.title }}
                     </a>
                 {% elif target_type == "Case Study" %}
-                    <a href="{% url 'astrolink:casestudy_detail' target.pk %}">
+                    <a href="{% url 'astrolink:casestudy_detail' target.pk %}" target="_blank">
                         Case Study — {{ target.title }}
                     </a>
                 {% endif %}
@@ -24,7 +24,7 @@
         </p>
 
         <p class="text-muted mb-1">
-            <strong>Member Email:</strong> {{ application.member.email }}
+            <strong>Submitted by:</strong> <a href="{% url 'authentication:profile_detail' application.member.username %}" target="_blank">{{ application.member.display_name }}</a>
         </p>
 
         <!-- Status -->

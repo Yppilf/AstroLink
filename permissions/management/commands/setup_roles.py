@@ -2,13 +2,14 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application
-from authentication.models import Role
+from authentication.models import Role, SupervisorProfile, StudentProfile
 
 class Command(BaseCommand):
     help = 'Set up roles and permissions'
 
     def handle(self, *args, **kwargs):
         # Define roles
+        permission_map = {}
         roles = ['System Admin', 
                  'Supervisor',
                  'Own Data', 
@@ -31,6 +32,7 @@ class Command(BaseCommand):
 
         # Define permissions and their respective groups
         permissions = [
+            ('supervisor', SupervisorProfile, ["create", "read", "update", "delete"]),
             ('reference', Reference, ["create", "read", "update", "delete"]),
             ('interest', Interest, ["create", "read", "update", "delete"]),
             ('project', Project, ["create", "read", "update", "delete"]),
@@ -49,8 +51,10 @@ class Command(BaseCommand):
                 permission, created = Permission.objects.get_or_create(
                     codename=codename,
                     content_type=content_type,
-                    defaults={'name': name}  # only set name if creating
+                    defaults={'name': name}
                 )
+
+                permission_map[codename] = permission
 
                 if created:
                     self.stdout.write(f"Created permission: {name}")
@@ -60,6 +64,7 @@ class Command(BaseCommand):
         # Define role-permission mappings
         role_permissions = {
             'System Admin': [
+                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_interest', 'read_interest', 'update_interest', 'delete_interest',
                 'create_project', 'read_project', 'update_project', 'delete_project',
@@ -70,6 +75,7 @@ class Command(BaseCommand):
                 'create_application', 'read_application', 'update_application', 'delete_application',
             ], 
             'Supervisor': [
+                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',
@@ -83,6 +89,7 @@ class Command(BaseCommand):
                 # TODO
             ],
             'Student': [
+                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_interest', 'read_interest', 'update_interest', 'delete_interest',
                 'create_project', 'read_project', 'update_project', 'delete_project',
@@ -94,6 +101,7 @@ class Command(BaseCommand):
                 # TODO
             ],
             'External User': [
+                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',
@@ -111,8 +119,12 @@ class Command(BaseCommand):
             group.permissions.clear()
             for perm_codename in perms:
                 try:
-                    permission = Permission.objects.get(codename=perm_codename)
-                    group.permissions.add(permission)
+                    permission = permission_map.get(perm_codename)
+                    if permission:
+                        group.permissions.add(permission)
+                    else:
+                        self.stdout.write(f"Warning: Permission {perm_codename} not found.")
+
                 except Permission.DoesNotExist:
                     self.stdout.write(f"Warning: Permission {perm_codename} does not exist.")
             print(f"Assigned permissions to group: {role}")

@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .utils import PROFILE_REGISTRY, model_to_field_pairs
 from .forms import UserProfileForm
+from astrolink.utils import get_applications_for_user
 
 @login_required
 def my_profile(request):
@@ -44,6 +45,11 @@ def profile_detail(request, username):
     if profile and registry_entry and "extra_context_fn" in registry_entry:
         extra_context = registry_entry["extra_context_fn"](profile)
 
+    applications = None
+    if request.GET.get("tab") == "applications":
+        applications = get_applications_for_user(profile_user)
+        print(applications)
+
     return render(request, "authentication/profiles/profile_detail.html", {
         "profile_user": profile_user,
         "profile": profile,
@@ -51,6 +57,7 @@ def profile_detail(request, username):
         "active_tab": request.GET.get("tab", "overview"),
         "user_fields": user_fields,
         "profile_fields": profile_fields,
+        "applications": applications,
         **extra_context
     })
 
