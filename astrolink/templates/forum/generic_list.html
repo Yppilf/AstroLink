@@ -3,6 +3,10 @@
 
 {% block content %}
 
+<script>
+const DATA_URL = "{{ data_url }}";
+</script>
+
 <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-3">
     {% if can_create and create_url %}
         <a href="{{ create_url }}" class="btn btn-primary h-100">
@@ -19,119 +23,159 @@
     </form>
 </div>
 
-
 <div class="table-responsive">
     <table class="table table-striped table-hover shadow-sm">
         <thead class="table-light">
             <tr>
-                {% if columns %}
-                    {% for col in columns %}
-                        <th>{{ col|pretty_header }}</th>
-                    {% endfor %}
-                {% else %}
-                    <th>Name</th>
-                {% endif %}
+                {% for col in columns %}
+                    <th class="sortable" data-sort="{{ col }}" data-order="asc">
+                        {{ col|pretty_header }}
+                        <span class="sort-arrow"></span>
+                    </th>
+                {% endfor %}
                 {% if has_actions %}
                     <th class="text-end">Actions</th>
                 {% endif %}
             </tr>
         </thead>
-        <tbody>
-        {% for item in objects %}
-            <tr
-                {% if item.can_view and item.detail_url and not has_actions %}
-                    role="button"
-                    onclick="window.location='{{ item.detail_url }}'"
-                    style="cursor: pointer;"
-                {% endif %}
-            >
-                {% if columns %}
-                    {% for col in columns %}
-                        <td>{{ item.obj|get_display:col }}</td>
-                    {% endfor %}
-                {% else %}
-                    <td>{{ item.obj }}</td>
-                {% endif %}
-                {% if has_actions %}
-                    <td class="text-end">
-                        {% if item.can_view and item.detail_url %}
-                            <a href="{{ item.detail_url }}" class="btn btn-sm btn-outline-primary">View</a>
-                        {% endif %}
-                        {% if item.can_update and item.update_url %}
-                            <a href="{{ item.update_url }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        {% endif %}
-                        {% if item.can_delete and item.delete_url %}
-                            <a href="{{ item.delete_url }}" class="btn btn-sm btn-outline-danger">Delete</a>
-                        {% endif %}
-                    </td>
-                {% endif %}
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="{% if columns %}{{ columns|length|add:1 }}{% else %}2{% endif %}" class="text-muted text-center">
-                    No {{ object_name }} found.
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
+
+    <div class="pagination-container mt-3">
+        <ul id="pagination" class="pagination justify-content-center"></ul>
+    </div>
 </div>
 
-<!-- Pagination -->
-{% if page_obj.has_other_pages %}
-<nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled"><span class="page-link">Previous</span></li>
-        {% endif %}
-
-        {% for num in page_obj.paginator.page_range %}
-            {% if num == page_obj.number %}
-                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-            {% else %}
-                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-            {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled"><span class="page-link">Next</span></li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
-
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const searchInput = document.querySelector("input[name='search']");
-    const tableBody = document.querySelector("tbody");
+let currentPage = 1;
+let currentSearch = "";
+let currentSort = null;
+let currentOrder = "asc";
 
-    let timeout = null;
-
-    searchInput.addEventListener("input", () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            fetch(`?search=${encodeURIComponent(searchInput.value)}`)
-                .then(response => response.text())
-                .then(html => {
-                    // Extract table body content from returned page HTML
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, "text/html");
-                    const newTbody = doc.querySelector("tbody").innerHTML;
-
-                    tableBody.innerHTML = newTbody;
-                });
-        }, 250);
+function updateSortArrows() {
+    document.querySelectorAll("th.sortable").forEach(th => {
+        const arrow = th.querySelector(".sort-arrow");
+        if (th.dataset.sort === currentSort) {
+            arrow.textContent = currentOrder === "asc" ? " ▲" : " ▼";
+        } else {
+            arrow.textContent = "";
+        }
     });
-});
-</script>
+}
 
+
+function renderRows(rows) {
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    // Match YYYY-MM-DD or YYYY-MM-DD HH:MM:SS[.micro][+TZ]
+    const dateRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2})?)?$/;
+
+    rows.forEach(row => {
+        const tr = document.createElement("tr");
+
+        const actionCount = [row.detail_url, row.update_url, row.delete_url].filter(Boolean).length;
+        const onlyDetail = actionCount === 1 && row.detail_url && !row.update_url && !row.delete_url;
+
+        row.values.forEach(val => {
+            const td = document.createElement("td");
+
+            if (typeof val === "string" && dateRegex.test(val)) {
+                // Parse date manually to avoid JS misinterpretation
+                let [datePart, timePart] = val.split(" ");
+                let [year, month, day] = datePart.split("-");
+                if (timePart) {
+                    let [hour, minute] = timePart.split(":");
+                    td.textContent = `${day}-${month}-${year} ${hour}:${minute}`;
+                } else {
+                    td.textContent = `${day}-${month}-${year}`;
+                }
+            } else {
+                td.textContent = val;
+            }
+
+            tr.appendChild(td);
+        });
+
+        if (!onlyDetail && actionCount > 0) {
+            const actions = document.createElement("td");
+            actions.className = "text-end";
+
+            if (row.detail_url)
+                actions.innerHTML += `<a href="${row.detail_url}" class="btn btn-sm btn-outline-primary">View</a> `;
+            if (row.update_url)
+                actions.innerHTML += `<a href="${row.update_url}" class="btn btn-sm btn-outline-secondary">Edit</a> `;
+            if (row.delete_url)
+                actions.innerHTML += `<a href="${row.delete_url}" class="btn btn-sm btn-outline-danger">Delete</a>`;
+
+            tr.appendChild(actions);
+        }
+
+        if (onlyDetail) {
+            tr.style.cursor = "pointer";
+            tr.onclick = () => {
+                window.location = row.detail_url;
+            };
+        }
+
+        tbody.appendChild(tr);
+    });
+}
+
+function renderPagination(page, pages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    for (let i = 1; i <= pages; i++) {
+        const li = document.createElement("li");
+        li.className = `page-item ${i === page ? "active" : ""}`;
+        const a = document.createElement("a");
+        a.className = "page-link";
+        a.textContent = i;
+        a.onclick = () => loadPage(i);
+        li.appendChild(a);
+        pagination.appendChild(li);
+    }
+}
+
+function loadPage(page = 1) {
+    currentPage = page;
+    let url = `${DATA_URL}?search=${encodeURIComponent(currentSearch)}&page=${page}`;
+    if (currentSort) url += `&sort=${currentSort}&order=${currentOrder}`;
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            renderRows(data.rows);
+            renderPagination(data.page, data.pages);
+        });
+}
+
+// Search input listener
+document.querySelector("input[name='search']").addEventListener("input", e => {
+    currentSearch = e.target.value;
+    loadPage(1);
+});
+
+document.querySelectorAll("th.sortable").forEach(th => {
+    th.style.cursor = "pointer";
+    th.onclick = () => {
+        const sortCol = th.dataset.sort;
+        let order = th.dataset.order || "asc";
+        order = (sortCol === currentSort && currentOrder === "asc") ? "desc" : "asc"; // toggle
+        th.dataset.order = order;
+
+        currentSort = sortCol;
+        currentOrder = order;
+
+        loadPage(1);
+        updateSortArrows();
+    };
+});
+
+// Initial load
+loadPage();
+updateSortArrows();
+</script>
 
 {% endblock %}

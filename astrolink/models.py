@@ -49,7 +49,6 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
-
 def casestudy_logo_path(instance, filename):
     """Dynamically generates upload path for case study logos"""
     return f"casestudylogos/{instance.id}/{filename}"

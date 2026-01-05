@@ -51,7 +51,7 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="m-0">Case Studies</h5>
                     {% if can_create_casestudy %}
-                        <a href="{% url 'astrolink:casestudy_create' %}?company={{ company.pk }}&next={% url 'company_detail' company.pk %}" 
+                        <a href="{% url 'astrolink:casestudy_create' %}?company={{ company.pk }}&next={% url 'astrolink:company_detail' company.pk %}" 
                             class="btn btn-sm btn-light">+ Add Case Study</a>
                     {% endif %}
                 </div>

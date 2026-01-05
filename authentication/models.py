@@ -76,7 +76,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = "user"
 
     def __str__(self):
-        return self.email
+        return self.display_name()
     
     def display_name(self):
         return self.screen_name or self.legal_name

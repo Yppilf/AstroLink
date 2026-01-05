@@ -9,12 +9,16 @@ from .forms import (
     ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm
 )
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.db.models.fields.related import ForeignKey
 from django.contrib import messages
 from permissions.utils import external_user_permissions_required, has_permission
 from django.template.loader import render_to_string
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
+from django.db.models import Q
+from django.db.models import F, Value, CharField
+from django.db.models.functions import Concat
+from django.db.models.functions import Cast
+from django.db.models.functions import Coalesce
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -23,75 +27,124 @@ def generic_list_view(
     object_name,
     url_prefix,
     columns=None,
-    per_page=10,
     can_create=True,
     can_view=True,
     can_update=True,
     can_delete=True,
 ):
-    search = request.GET.get("search", "").strip()
-
-    if search and columns:
-        model = queryset.model
-        q_objects = Q()
-
-        for col in columns:
-            field = model._meta.get_field(col)
-
-            if isinstance(field, ForeignKey):
-                # Search on the related model's string-like field
-                # We assume the related model defines __str__ based on a field named "name" or similar
-                related_model = field.related_model
-
-                # Try to guess useful text fields
-                candidate_fields = ["name", "title", "email", "label"]
-                for c in candidate_fields:
-                    if c in [f.name for f in related_model._meta.fields]:
-                        lookup = f"{col}__{c}__icontains"
-                        q_objects |= Q(**{lookup: search})
-                        break
-                else:
-                    # fallback fallback — string search unsupported directly
-                    pass
-            else:
-                # Normal text field
-                lookup = f"{col}__icontains"
-                q_objects |= Q(**{lookup: search})
-
-        queryset = queryset.filter(q_objects)
-
-    queryset = queryset.order_by("pk")  # avoid unordered warning
-
-    paginator = Paginator(queryset, per_page)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
-    objects = []
-    for obj in page_obj:
-        obj_dict = {
-            "obj": obj,
-            "detail_url": reverse(f"astrolink:{url_prefix}_detail", args=[obj.pk]) if can_view else None,
-            "can_view": can_view,
-            "can_update": can_update,
-            "can_delete": can_delete,
-        }
-        if can_update:
-            obj_dict["update_url"] = reverse(f"astrolink:{url_prefix}_update", args=[obj.pk])
-        if can_delete:
-            obj_dict["delete_url"] = reverse(f"astrolink:{url_prefix}_delete", args=[obj.pk])
-        objects.append(obj_dict)
-
     create_url = reverse(f"astrolink:{url_prefix}_create") if can_create else None
+
     return render(request, "forum/generic_list.html", {
-        "objects": objects,
-        "page_obj": page_obj,
         "columns": columns,
         "object_name": object_name,
         "create_url": create_url,
         "page_title": f"{object_name} List",
-        "search": search,
         "can_create": can_create,
         "has_actions": can_update or can_delete,
+        "data_url": reverse(f"astrolink:{url_prefix}_list_data"),
     })
+
+def generic_list_data(
+    request,
+    queryset,
+    object_name,
+    url_prefix,
+    columns=None,
+    per_page=10,
+    can_view=True,
+    can_update=True,
+    can_delete=True,
+):
+    search = request.GET.get("search", "").strip()
+    page = int(request.GET.get("page", 1))
+    sort = request.GET.get("sort")
+    order = request.GET.get("order", "asc")
+
+    model = queryset.model
+    annotations = {}
+
+    # --- Annotate columns ---
+    for col in columns or []:
+        try:
+            field = model._meta.get_field(col)
+            # BaseProfile-derived FK: annotate name for filtering/sorting
+            if field.is_relation and hasattr(field.related_model, "name"):
+                annotations[f"{col}_name"] = Coalesce(
+                    F(f"{col}__user__screen_name"), F(f"{col}__user__legal_name")
+                )
+            # Direct BaseProfile or user fields
+            elif col == "name" and hasattr(model, "user"):
+                annotations["name"] = Coalesce(F("user__screen_name"), F("user__legal_name"))
+            elif col == "email" and hasattr(model, "user"):
+                annotations["email"] = F("user__email")
+        except Exception:
+            pass
+
+    if annotations:
+        queryset = queryset.annotate(**annotations)
+
+    # --- Filtering ---
+    if search and columns:
+        q_objects = Q()
+        for col in columns:
+            # Use annotated FK names if present
+            ann_col = f"{col}_name" if f"{col}_name" in queryset.query.annotations else col
+            if ann_col in queryset.query.annotations:
+                q_objects |= Q(**{f"{ann_col}__icontains": search})
+            else:
+                try:
+                    field = model._meta.get_field(col)
+                    if field.is_relation:
+                        # Generic FK search on str(): fallback to nothing
+                        pass
+                    else:
+                        q_objects |= Q(**{f"{col}__icontains": search})
+                except Exception:
+                    pass
+        queryset = queryset.filter(q_objects)
+
+    # --- Sorting ---
+    if sort and columns and sort in columns:
+        ann_sort = f"{sort}_name" if f"{sort}_name" in queryset.query.annotations else sort
+        sort_field = ann_sort
+        if order == "desc":
+            sort_field = f"-{sort_field}"
+        queryset = queryset.order_by(sort_field)
+    else:
+        queryset = queryset.order_by("pk")
+
+    # --- Pagination ---
+    paginator = Paginator(queryset, per_page)
+    page_obj = paginator.get_page(page)
+
+    # --- Build rows ---
+    rows = []
+    for obj in page_obj:
+        values = []
+        for col in columns:
+            val = getattr(obj, col, "")
+            if callable(val):
+                val = val()
+            elif hasattr(val, "__str__"):
+                val = str(val)
+            values.append(val)
+
+        row = {
+            "values": values,
+            "detail_url": reverse(f"astrolink:{url_prefix}_detail", args=[obj.pk]) if can_view else None,
+            "update_url": reverse(f"astrolink:{url_prefix}_update", args=[obj.pk]) if can_update else None,
+            "delete_url": reverse(f"astrolink:{url_prefix}_delete", args=[obj.pk]) if can_delete else None,
+        }
+        rows.append(row)
+
+    return JsonResponse({
+        "rows": rows,
+        "page": page_obj.number,
+        "pages": paginator.num_pages,
+        "total": paginator.count,
+        "has_actions": can_update or can_delete,
+    })
+
 
 def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None):
     list_url = reverse(f"astrolink:{url_prefix}_list")
@@ -164,11 +217,34 @@ def supervisor_list(request):
         SupervisorProfile.objects.select_related("user").all(),
         "Supervisor",
         url_prefix="supervisor",
-        columns=["name", "email"],
+        columns=["display_name", "display_email"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_supervisor")
+def supervisor_list_data(request):
+    can_view = has_permission(request.user, "read_supervisor")
+    can_update = False
+    can_delete = False
+
+    qs = SupervisorProfile.objects.select_related("user").annotate(
+        display_name=Coalesce(F("user__screen_name"), F("user__legal_name")),
+        display_email=F("user__email")
+    )
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Supervisor",
+        url_prefix="supervisor",
+        columns=["display_name", "display_email"], 
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
     )
 
 @external_user_permissions_required("read_supervisor")
@@ -197,6 +273,24 @@ def project_list(request):
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_project")
+def project_list_data(request):
+    can_view = has_permission(request.user, "read_project")
+    can_update = False
+    can_delete = False
+
+    return generic_list_data(
+        request,
+        Project.objects.all(),
+        object_name="Project",
+        url_prefix="project",
+        columns=["title", "supervisor", "time_estimate", "created_at"],
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
     )
 
 @external_user_permissions_required("create_project", "update_project")
@@ -257,6 +351,27 @@ def company_list(request):
         can_delete=can_delete,
     )
 
+@external_user_permissions_required("read_company")
+def company_list_data(request):
+    can_view = has_permission(request.user, "read_company")
+    can_update = has_permission(request.user, "update_company")
+    can_delete = has_permission(request.user, "delete_company")
+
+    qs = Company.objects.all()
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Company",
+        url_prefix="company",
+        columns=["name", "contact_name", "email", "contact_phone", "status"],
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
+    )
+
+
 @external_user_permissions_required("create_company", "create_company2", "update_company", "update_company2")
 def company_form(request, pk=None):
     instance = Company.objects.filter(pk=pk).first()
@@ -308,12 +423,36 @@ def casestudy_list(request):
         CaseStudy.objects.all(),
         "Case Study",
         url_prefix="casestudy",
-        columns=["title", "company", "time_estimate"],
+        columns=["title", "company_name", "time_estimate"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
     )
+
+@external_user_permissions_required("read_casestudy")
+def casestudy_list_data(request):
+    can_view = has_permission(request.user, "read_casestudy")
+    can_update = has_permission(request.user, "update_casestudy")
+    can_delete = has_permission(request.user, "delete_casestudy")
+
+    # Annotate the company name for searching/sorting
+    qs = CaseStudy.objects.select_related("company").annotate(
+        company_name=F("company__name")
+    )
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Case Study",
+        url_prefix="casestudy",
+        columns=["title", "company_name", "time_estimate"],  # match annotated field
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
+    )
+
 
 @external_user_permissions_required("create_casestudy", "update_casestudy")
 def casestudy_form(request, pk=None):
@@ -361,6 +500,27 @@ def researchgroup_list(request):
         can_update=can_update,
         can_delete=can_delete,
     )
+
+@external_user_permissions_required("read_researchgroup")
+def researchgroup_list_data(request):
+    can_view = has_permission(request.user, "read_researchgroup")
+    can_update = has_permission(request.user, "update_researchgroup")
+    can_delete = has_permission(request.user, "delete_researchgroup")
+
+    qs = ResearchGroup.objects.all()
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Research Group",
+        url_prefix="researchgroup",
+        columns=["name", "lead_professor", "contact_email"],
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
+    )
+
 
 @external_user_permissions_required("create_researchgroup", "update_researchgroup")
 def researchgroup_form(request, pk=None):
@@ -436,12 +596,38 @@ def application_list(request):
         Application.objects.all(),
         "Application",
         url_prefix="application",
-        columns=["member", "status"],
+        columns=["display_member", "current_status"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
     )
+
+@external_user_permissions_required("read_application")
+def application_list_data(request):
+    can_view = has_permission(request.user, "read_application")
+    can_update = has_permission(request.user, "update_application")
+    can_delete = has_permission(request.user, "delete_application")
+
+    # Annotate member_name for filtering/sorting
+    qs = Application.objects.select_related("member").annotate(
+        member_name=Coalesce(F("member__screen_name"), F("member__legal_name")),
+        current_status=F("status")  # use raw status; can also annotate human-readable if desired
+    )
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Application",
+        url_prefix="application",
+        columns=["member_name", "current_status"],  # note: matches the annotated names
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+        per_page=10,
+    )
+
+
 
 @external_user_permissions_required("create_application")
 def application_form(request, pk=None):
