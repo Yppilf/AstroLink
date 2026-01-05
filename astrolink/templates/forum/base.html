@@ -32,7 +32,7 @@
             <span class="fw-bold fs-5">AstroLink</span>
         </div>
 
-        <ul class="nav flex-column px-2">
+        <ul class="nav flex-column px-2 flex-grow-1">
 
             <!-- Home -->
             <li class="nav-item">
@@ -98,6 +98,38 @@
             {% endif %}
 
         </ul>
+
+        <div class="sidebar-footer border-top p-3">
+        {% if request.user.is_authenticated %}
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-person-circle fs-4 me-2"></i>
+                <div class="small">
+                    <div class="fw-semibold">
+                        {{ request.user.display_name }}
+                    </div>
+                    <div class="text-muted">
+                        {{ request.user.role }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'authentication:profile' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-person"></i> Profile
+                </a>
+                <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger btn-sm w-100">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+
+        {% else %}
+            <div class="d-grid">
+                <a href="{% url 'authentication:login' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+            </div>
+        {% endif %}
+    </div>
 
     </nav>
 
