@@ -27,6 +27,12 @@ class SignUpForm(UserCreationForm):
             'password2',
         ]
 
+    def __init__(self, *args, request=None, instance=None, **kwargs):
+        super().__init__(*args, instance=instance, **kwargs)
+        self.instructions = (
+            "Note that by signing up here, you will be registering as a student. If you want to register as supervisor or any other role, please contact sirius@astro.rug.nl"
+        )
+
     def clean_email(self):
         email = self.cleaned_data['email']
         regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
