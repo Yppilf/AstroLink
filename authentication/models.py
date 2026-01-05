@@ -130,6 +130,7 @@ class SupervisorProfile(BaseProfile):
     profile_picture = models.ImageField(upload_to=supervisor_profile_picture_path,null=True,blank=True)
 
 class StudentProfile(BaseProfile):
+    biography = models.TextField(blank=True)
     snumber = models.CharField(max_length=64, null=True, blank=True)
     level = models.CharField(max_length=64, null=True, blank=True)
     study_programme = models.CharField(max_length=128, blank=True)    

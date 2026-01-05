@@ -49,6 +49,12 @@ urlpatterns = [
     path("references/update/<int:pk>/", views.reference_form, name="reference_update"),
     path("references/delete/<int:pk>/", views.reference_delete, name="reference_delete"),
 
+    # INTERESTS
+    path("interests/", views.interest_list, name="interest_list"),
+    path("interests/create/", views.interest_form, name="interest_create"),
+    path("interests/update/<int:pk>/", views.interest_form, name="interest_update"),
+    path("interests/delete/<int:pk>/", views.interest_delete, name="interest_delete"),
+
     # APPLICATIONS
     path("applications/", views.application_list, name="application_list"),
     path("applications/create/", views.application_form, name="application_create"),

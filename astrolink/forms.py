@@ -1,8 +1,7 @@
 from django import forms
-from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company
+from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company, Interest
 from authentication.models import SupervisorProfile
 import re
-# from core.models import User
 
 # Helper email validator
 def validate_email(value):
@@ -37,6 +36,29 @@ class ReferenceForm(forms.ModelForm):
             obj.save()
         return obj
 
+class InterestForm(forms.ModelForm):
+    class Meta:
+        model = Interest
+        fields = ["topic", "experience"]
+        widgets = {
+            "experience": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.student = kwargs.pop("student", None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+
+        if not obj.pk:
+            if self.student is None:
+                raise ValueError("Student must be provided to save a new Interest.")
+            obj.student = self.student
+
+        if commit:
+            obj.save()
+        return obj
 
 class ProjectForm(forms.ModelForm):
     class Meta:

@@ -83,7 +83,7 @@ def register_view(request):
         form = SignUpForm()
     return render(request, 'forum/generic_form.html', {'form': form, 'list_url': reverse('astrolink:forum_home') })
 
-@external_user_permissions_required('create_supervisor')
+@external_user_permissions_required('create_company2')
 def admin_register_view(request):
     if request.method == "POST":
         form = AdminSignUpForm(request.POST)

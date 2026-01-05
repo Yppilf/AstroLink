@@ -1,5 +1,5 @@
 from django.db import models
-from authentication.models import User, SupervisorProfile
+from authentication.models import User, SupervisorProfile, StudentProfile
 
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
@@ -13,6 +13,15 @@ class Reference(models.Model):
 
     def __str__(self):
         return self.title
+
+class Interest(models.Model):
+    student = models.ForeignKey(StudentProfile,on_delete=models.CASCADE,related_name="interests")
+    topic = models.CharField(max_length=128)
+    experience = models.TextField(help_text="Describe your background or experience with this topic")
+
+    def __str__(self):
+        return self.topic
+
 
 class Project(models.Model):
     title = models.CharField(max_length=200)

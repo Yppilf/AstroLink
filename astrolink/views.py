@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import (
-    Project, Company, CaseStudy, ResearchGroup, Reference, Application
+    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest
 )
 from authentication.models import SupervisorProfile
 from .forms import (
     ProjectForm, CompanyForm, CaseStudyForm,
-    ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm
+    ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm
 )
 from django.core.paginator import Paginator
 from django.db.models.fields.related import ForeignKey
@@ -14,10 +14,7 @@ from django.contrib import messages
 from permissions.utils import external_user_permissions_required, has_permission
 from django.template.loader import render_to_string
 from django.http import HttpResponseForbidden, JsonResponse
-from django.db.models import Q
-from django.db.models import F, Value, CharField
-from django.db.models.functions import Concat
-from django.db.models.functions import Cast
+from django.db.models import Q, F
 from django.db.models.functions import Coalesce
 
 # A helper that avoids repeating template logic:
@@ -574,6 +571,46 @@ def reference_delete(request, pk):
 
     instance = get_object_or_404(Reference, pk=pk, supervisor=user_profile)
     return generic_delete_view(request, instance, "Reference", url_prefix="reference")
+
+# -----------------------------------------------
+# INTEREST CRUD
+# -----------------------------------------------
+def interest_list(request):
+    return redirect("authentication:my_profile")
+
+@external_user_permissions_required("create_interest", "update_interest")
+def interest_form(request, pk=None):
+    user_profile = getattr(request.user, "studentprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden(
+            render_to_string("forum/403.html", request=request)
+        )
+
+    instance = Interest.objects.filter(
+        pk=pk, student=user_profile
+    ).first()
+
+    return generic_form_view(
+        request,
+        InterestForm,
+        instance,
+        "Edit Interest" if instance else "Add Interest",
+        url_prefix="interest",
+        form_kwargs={"student": user_profile}
+    )
+
+@external_user_permissions_required("delete_interest")
+def interest_delete(request, pk):
+    user_profile = getattr(request.user, "studentprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden("You are not allowed to delete interests.")
+
+    instance = get_object_or_404(
+        Interest, pk=pk, student=user_profile
+    )
+    return generic_delete_view(
+        request, instance, "Interest", url_prefix="interest"
+    )
 
 
 # -----------------------------------------------

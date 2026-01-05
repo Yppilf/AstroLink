@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from astrolink.models import Supervisor, Reference, Project, Company, CaseStudy, ResearchGroup, Application
+from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application
 from authentication.models import Role
 
 class Command(BaseCommand):
@@ -31,8 +31,8 @@ class Command(BaseCommand):
 
         # Define permissions and their respective groups
         permissions = [
-            ('supervisor', Supervisor, ["create", "read", "update", "delete"]),
             ('reference', Reference, ["create", "read", "update", "delete"]),
+            ('interest', Interest, ["create", "read", "update", "delete"]),
             ('project', Project, ["create", "read", "update", "delete"]),
             ('company', Company, ["create", "read", "update", "delete"]),                 # name, description, website
             ('company2', Company, ["create", "read", "update", "delete"]),                # contact data, status
@@ -60,8 +60,8 @@ class Command(BaseCommand):
         # Define role-permission mappings
         role_permissions = {
             'System Admin': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
+                'create_interest', 'read_interest', 'update_interest', 'delete_interest',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',
                 'create_company2', 'read_company2', 'update_company2', 'delete_company2',
@@ -70,7 +70,6 @@ class Command(BaseCommand):
                 'create_application', 'read_application', 'update_application', 'delete_application',
             ], 
             'Supervisor': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',
@@ -84,8 +83,8 @@ class Command(BaseCommand):
                 # TODO
             ],
             'Student': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
+                'create_interest', 'read_interest', 'update_interest', 'delete_interest',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',
                 'create_company2', 'read_company2', 'update_company2', 'delete_company2',
@@ -95,7 +94,6 @@ class Command(BaseCommand):
                 # TODO
             ],
             'External User': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_reference', 'read_reference', 'update_reference', 'delete_reference',
                 'create_project', 'read_project', 'update_project', 'delete_project',
                 'create_company', 'read_company', 'update_company', 'delete_company',

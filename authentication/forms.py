@@ -95,4 +95,4 @@ class SupervisorProfileForm(forms.ModelForm):
 class StudentProfileForm(forms.ModelForm):
     class Meta:
         model = StudentProfile
-        fields = ["study_programme", "level", "snumber"]
+        fields = ["biography", "study_programme", "level", "snumber"]
