@@ -1,5 +1,6 @@
 from django import forms
-from .models import Project, CaseStudy, ResearchGroup, Supervisor, Reference, Application, Company
+from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company
+from authentication.models import SupervisorProfile
 import re
 # from core.models import User
 
@@ -9,18 +10,6 @@ def validate_email(value):
     if not re.fullmatch(regex, value):
         raise forms.ValidationError("Please enter a valid email address.")
     return value
-
-class SupervisorForm(forms.ModelForm):
-    class Meta:
-        model = Supervisor
-        fields = ['name', 'email', 'biography', 'profile_picture']
-        widgets = {
-            'biography': forms.Textarea(attrs={'rows': 4}),
-            'profile_picture': forms.FileInput(),
-        }
-
-    def clean_email(self):
-        return validate_email(self.cleaned_data['email'])
 
 class ReferenceForm(forms.ModelForm):
     class Meta:
@@ -45,7 +34,7 @@ class ReferenceForm(forms.ModelForm):
 
 class ProjectForm(forms.ModelForm):
     supervisor = forms.ModelChoiceField(
-        queryset=Supervisor.objects.all(),
+        queryset=SupervisorProfile.objects.select_related("user").all(),
         label="Supervisor",
         empty_label="Select a Supervisor"
     )
@@ -162,7 +151,7 @@ class ApplicationForm(forms.ModelForm):
         # Custom labels for dropdowns
         if "project" in self.fields:
             self.fields['project'].label_from_instance = (
-                lambda obj: f"{obj.title} (Supervisor: {obj.supervisor.name})"
+                lambda obj: f"{obj.title} (Supervisor: {obj.supervisor.user.display_name})"
             )
 
         if "case_study" in self.fields:

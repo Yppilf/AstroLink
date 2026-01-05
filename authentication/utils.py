@@ -11,6 +11,10 @@ PROFILE_REGISTRY = {
         "model": SupervisorProfile,
         "form": SupervisorProfileForm,
         "label": "Supervisor",
+        "extra_context_fn": lambda profile: {
+            "references": profile.references.all(),
+            "projects": profile.projects.all(),
+        }
     },
 }
 

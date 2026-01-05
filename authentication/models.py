@@ -108,6 +108,16 @@ class BaseProfile(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def name(self):
+        """Return the display name of the associated user"""
+        return self.user.display_name()
+
+    @property
+    def email(self):
+        """Return the email of the associated user"""
+        return self.user.email
+
 def supervisor_profile_picture_path(instance, filename):
     return f"supervisors/{instance.user.id}/{filename}"
 

@@ -1,25 +1,11 @@
 from django.db import models
-from authentication.models import User
-
+from authentication.models import User, SupervisorProfile
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
     return f"supervisors/{instance.id}/{filename}"
 
-class Supervisor(models.Model):
-    name = models.CharField(max_length=128)
-    email = models.CharField(max_length=64)
-    biography = models.TextField()
-    profile_picture = models.ImageField(
-        upload_to=supervisor_profile_picture_path, 
-        null=True, 
-        blank=True
-    )
-
-    def __str__(self):
-        return self.name
-
 class Reference(models.Model):
-    supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE, related_name="references")
+    supervisor = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE, related_name="references")
     title = models.CharField(max_length=128)
     description = models.TextField()
     link = models.CharField(max_length=256, null=True, blank=True)
@@ -30,7 +16,7 @@ class Reference(models.Model):
 class Project(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE, related_name="projects")
+    supervisor = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE, related_name="projects")
     time_estimate = models.CharField(max_length=16, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now_add=True)

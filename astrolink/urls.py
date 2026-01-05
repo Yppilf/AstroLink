@@ -8,9 +8,6 @@ urlpatterns = [
 
     # SUPERVISORS
     path("supervisors/", views.supervisor_list, name="supervisor_list"),
-    path("supervisors/create/", views.supervisor_form, name="supervisor_create"),
-    path("supervisors/update/<int:pk>/", views.supervisor_form, name="supervisor_update"),
-    path("supervisors/delete/<int:pk>/", views.supervisor_delete, name="supervisor_delete"),
     path("supervisors/<int:pk>/", views.supervisor_detail, name="supervisor_detail"),
 
     # PROJECTS

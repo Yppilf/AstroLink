@@ -39,6 +39,11 @@ def profile_detail(request, username):
             exclude=["id", "user", "created_at", "updated_at", "profile_picture"]
         )
 
+    # Inject role-specific extra context
+    extra_context = {}
+    if profile and registry_entry and "extra_context_fn" in registry_entry:
+        extra_context = registry_entry["extra_context_fn"](profile)
+
     return render(request, "authentication/profiles/profile_detail.html", {
         "profile_user": profile_user,
         "profile": profile,
@@ -46,6 +51,7 @@ def profile_detail(request, username):
         "active_tab": request.GET.get("tab", "overview"),
         "user_fields": user_fields,
         "profile_fields": profile_fields,
+        **extra_context
     })
 
 @login_required

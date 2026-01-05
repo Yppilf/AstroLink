@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    {% if can_create %}
+    {% if can_create and create_url %}
         <a href="{{ create_url }}" class="btn btn-primary">Add New {{ object_name }}</a>
     {% endif %}
 
@@ -41,13 +41,13 @@
                 <td>{{ item.obj }}</td>
             {% endif %}
             <td class="text-end">
-                {% if item.can_view %}
+                {% if item.can_view and item.detail_url %}
                     <a href="{{ item.detail_url }}" class="btn btn-sm btn-outline-primary">View</a>
                 {% endif %}
-                {% if item.can_update %}
+                {% if item.can_update and item.update_url %}
                     <a href="{{ item.update_url }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                 {% endif %}
-                {% if item.can_delete %}
+                {% if item.can_delete and item.delete_url %}
                     <a href="{{ item.delete_url }}" class="btn btn-sm btn-outline-danger">Delete</a>
                 {% endif %}
             </td>

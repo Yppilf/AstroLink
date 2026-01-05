@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import (
-    Supervisor, Project, Company, CaseStudy, ResearchGroup, Reference, Application
+    Project, Company, CaseStudy, ResearchGroup, Reference, Application
 )
+from authentication.models import SupervisorProfile
 from .forms import (
-    SupervisorForm, ProjectForm, CompanyForm, CaseStudyForm,
+    ProjectForm, CompanyForm, CaseStudyForm,
     ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm
 )
 from django.core.paginator import Paginator
@@ -64,22 +65,26 @@ def generic_list_view(
 
     objects = []
     for obj in page_obj:
-        objects.append({
+        obj_dict = {
             "obj": obj,
-            "detail_url": reverse(f"astrolink:{url_prefix}_detail", args=[obj.pk]),
-            "update_url": reverse(f"astrolink:{url_prefix}_update", args=[obj.pk]),
-            "delete_url": reverse(f"astrolink:{url_prefix}_delete", args=[obj.pk]),
+            "detail_url": reverse(f"astrolink:{url_prefix}_detail", args=[obj.pk]) if can_view else None,
             "can_view": can_view,
             "can_update": can_update,
             "can_delete": can_delete,
-        })
+        }
+        if can_update:
+            obj_dict["update_url"] = reverse(f"astrolink:{url_prefix}_update", args=[obj.pk])
+        if can_delete:
+            obj_dict["delete_url"] = reverse(f"astrolink:{url_prefix}_delete", args=[obj.pk])
+        objects.append(obj_dict)
 
+    create_url = reverse(f"astrolink:{url_prefix}_create") if can_create else None
     return render(request, "forum/generic_list.html", {
         "objects": objects,
         "page_obj": page_obj,
         "columns": columns,
         "object_name": object_name,
-        "create_url": reverse(f"astrolink:{url_prefix}_create"),
+        "create_url": create_url,
         "page_title": f"{object_name} List",
         "search": search,
         "can_create": can_create,
@@ -145,14 +150,15 @@ def forum_home(request):
 # -----------------------------------------------
 @external_user_permissions_required("read_supervisor")
 def supervisor_list(request):
-    can_create = has_permission(request.user, "create_supervisor")
+    # For now, make it such that it acts as a generic list view. Only authenticated supervisors can edit their own profiles
+    can_create = False
     can_view = has_permission(request.user, "read_supervisor")
-    can_update = has_permission(request.user, "update_supervisor")
-    can_delete = has_permission(request.user, "delete_supervisor")
+    can_update = False
+    can_delete = False
 
     return generic_list_view(
         request,
-        Supervisor.objects.all(),
+        SupervisorProfile.objects.select_related("user").all(),
         "Supervisor",
         url_prefix="supervisor",
         columns=["name", "email"],
@@ -162,38 +168,21 @@ def supervisor_list(request):
         can_delete=can_delete,
     )
 
-
-@external_user_permissions_required("create_supervisor", "update_supervisor")
-def supervisor_form(request, pk=None):
-    instance = Supervisor.objects.filter(pk=pk).first()
-    return generic_form_view(
-        request,
-        SupervisorForm,
-        instance,
-        "Edit Supervisor" if instance else "Create Supervisor",
-        url_prefix="supervisor"
-    )
-
-@external_user_permissions_required("delete_supervisor")
-def supervisor_delete(request, pk):
-    instance = get_object_or_404(Supervisor, pk=pk)
-    return generic_delete_view(request, instance, "Supervisor", url_prefix="supervisor")
-
 @external_user_permissions_required("read_supervisor")
 def supervisor_detail(request, pk):
-    supervisor = get_object_or_404(Supervisor, pk=pk)
-    references = supervisor.references.all()
-    projects = supervisor.projects.all()
-
+    supervisor_profile = get_object_or_404(SupervisorProfile, pk=pk)
+    references = supervisor_profile.references.all()
+    projects = supervisor_profile.projects.all()
+    
     can_create_reference = has_permission(request.user, "create_reference")
     can_update_reference = has_permission(request.user, "update_reference")
     can_delete_reference = has_permission(request.user, "delete_reference")
-
+    
     return render(request, "forum/supervisor_detail.html", {
-        "supervisor": supervisor,
+        "supervisor": supervisor_profile,
         "references": references,
         "projects": projects,
-        "page_title": supervisor.name,
+        "page_title": supervisor_profile.user.display_name(),
         "can_create_reference": can_create_reference,
         "can_update_reference": can_update_reference,
         "can_delete_reference": can_delete_reference

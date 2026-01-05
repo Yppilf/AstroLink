@@ -1,7 +1,60 @@
-<h5>About</h5>
+<div class="row">
+    <!-- References -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0">References</h5>
+            </div>
 
-{% if profile.biography %}
-    <p>{{ profile.biography }}</p>
-{% else %}
-    <p class="text-muted">No biography provided.</p>
-{% endif %}
+            <ul class="list-group list-group-flush">
+                {% for ref in references %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="me-auto">
+                            {% if ref.link %}
+                                <a href="{{ ref.link }}" target="_blank" class="fw-bold text-decoration-none">
+                                    {{ ref.title }}
+                                </a>
+                            {% else %}
+                                <strong>{{ ref.title }}</strong>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">{{ ref.description }}</small>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-center text-muted">
+                        No references available.
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0">Projects</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for proj in projects %}
+                    <li class="list-group-item">
+                        <strong>{{ proj.title }}</strong>
+                        {% if proj.time_estimate %}
+                            <span class="badge bg-secondary">{{ proj.time_estimate }}</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ proj.description|truncatewords:30 }}</small>
+                        <br>
+                        <small class="text-muted">Created: {{ proj.created_at|date:"Y-m-d" }}</small>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-center text-muted">
+                        No projects assigned.
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
