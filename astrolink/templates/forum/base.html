@@ -134,13 +134,30 @@
     </nav>
 
     <div class="main-section">
-        <header id="topbar" class="bg-white shadow-sm d-flex justify-content-between align-items-center">
-            <h1 class="h4 m-0">{{ page_title|default:"Home" }}</h1>
+        <header id="topbar" class="bg-white shadow-sm d-flex justify-content-between align-items-center p-2">
+            <nav aria-label="breadcrumb" class="breadcrumb-container m-0">
+                <ol class="breadcrumb mb-0">
+                    {% for crumb in breadcrumbs %}
+                        {% if not forloop.last %}
+                            <li class="breadcrumb-item">
+                                {% if crumb.url %}
+                                    <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+                                {% else %}
+                                    {{ crumb.title }}
+                                {% endif %}
+                            </li>
+                        {% else %}
+                            <li class="breadcrumb-item active" aria-current="page">{{ crumb.title }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+            </nav>
 
             <button class="btn btn-outline-secondary d-lg-none" id="toggleSidebar">
                 <i class="bi bi-list"></i>
             </button>
         </header>
+
         <main id="content">
             {% block content %}
             {% endblock %}

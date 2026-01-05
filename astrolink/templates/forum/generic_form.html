@@ -34,8 +34,20 @@
 
             {% if extra_form %}
                 <hr>
-                {{ extra_form.as_p }}
+                {% for field in extra_form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
             {% endif %}
+
 
             <div class="d-flex justify-content-between mt-4">
                 <button type="submit" class="btn btn-primary">

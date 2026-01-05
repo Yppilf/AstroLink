@@ -118,6 +118,40 @@ body {
     padding: 1.5rem;
 }
 
+/* ===== Breadcrumb styling ===== */
+
+.breadcrumb-container {
+    font-size: 0.95rem; /* slightly larger than default */
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+}
+
+.breadcrumb-item {
+    font-weight: 500;
+    color: #212529; /* Bootstrap body text color */
+}
+
+.breadcrumb-item a {
+    color: var(--primary); /* Bootstrap primary */
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item + .breadcrumb-item::be
+
+.breadcrumb-container {
+    background-color: #f8f9fa;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.375rem;
+}
+
 
 /* ================================================
    RESPONSIVENESS
