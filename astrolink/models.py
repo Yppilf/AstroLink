@@ -1,5 +1,6 @@
 from django.db import models
 from authentication.models import User, SupervisorProfile
+
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
     return f"supervisors/{instance.id}/{filename}"
@@ -11,7 +12,7 @@ class Reference(models.Model):
     link = models.CharField(max_length=256, null=True, blank=True)
 
     def __str__(self):
-        return f"Reference from {self.supervisor}"
+        return f"Reference from {self.supervisor.user.display_name()}"
 
 class Project(models.Model):
     title = models.CharField(max_length=200)

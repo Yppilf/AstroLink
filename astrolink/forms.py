@@ -19,18 +19,24 @@ class ReferenceForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4}),
         }
 
-    def __init__(self, *args, supervisor=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        # Pop supervisor from kwargs before passing to ModelForm
+        self.supervisor = kwargs.pop("supervisor", None)
         super().__init__(*args, **kwargs)
-        # store supervisor (may be None when editing existing reference)
-        self._supervisor = supervisor
 
     def save(self, commit=True):
-        ref = super().save(commit=False)
-        if self._supervisor is not None:
-            ref.supervisor = self._supervisor
+        obj = super().save(commit=False)
+
+        # Always assign supervisor for new objects
+        if not obj.pk:
+            if self.supervisor is None:
+                raise ValueError("Supervisor must be provided to save a new Reference.")
+            obj.supervisor = self.supervisor
+
         if commit:
-            ref.save()
-        return ref
+            obj.save()
+        return obj
+
 
 class ProjectForm(forms.ModelForm):
     supervisor = forms.ModelChoiceField(

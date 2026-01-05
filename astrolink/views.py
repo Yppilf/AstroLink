@@ -13,6 +13,8 @@ from django.db.models import Q
 from django.db.models.fields.related import ForeignKey
 from django.contrib import messages
 from permissions.utils import external_user_permissions_required, has_permission
+from django.template.loader import render_to_string
+from django.http import HttpResponseForbidden
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -171,23 +173,8 @@ def supervisor_list(request):
 @external_user_permissions_required("read_supervisor")
 def supervisor_detail(request, pk):
     supervisor_profile = get_object_or_404(SupervisorProfile, pk=pk)
-    references = supervisor_profile.references.all()
-    projects = supervisor_profile.projects.all()
-    
-    can_create_reference = has_permission(request.user, "create_reference")
-    can_update_reference = has_permission(request.user, "update_reference")
-    can_delete_reference = has_permission(request.user, "delete_reference")
-    
-    return render(request, "forum/supervisor_detail.html", {
-        "supervisor": supervisor_profile,
-        "references": references,
-        "projects": projects,
-        "page_title": supervisor_profile.user.display_name(),
-        "can_create_reference": can_create_reference,
-        "can_update_reference": can_update_reference,
-        "can_delete_reference": can_delete_reference
-    })
-
+    username = supervisor_profile.user.username
+    return redirect("authentication:profile_detail", username=username)
 
 # -----------------------------------------------
 # PROJECT CRUD
@@ -396,13 +383,12 @@ def reference_list(request):
 
 @external_user_permissions_required("create_reference", "update_reference")
 def reference_form(request, pk=None):
-    instance = Reference.objects.filter(pk=pk).first()
+    user_profile = getattr(request.user, "supervisorprofile", None)
+    if not user_profile:
+        return HttpResponseForbidden(render_to_string("forum/403.html", request=request))
 
-    # try to get supervisor id: from GET (when creating) or from instance (when editing)
-    supervisor_id = request.GET.get("supervisor") or (instance.supervisor.pk if instance else None)
-    supervisor = None
-    if supervisor_id:
-        supervisor = get_object_or_404(Supervisor, pk=supervisor_id)
+    instance = Reference.objects.filter(pk=pk, supervisor=user_profile).first()
+    # pk filtering ensures a supervisor cannot edit someone else's reference
 
     return generic_form_view(
         request,
@@ -410,7 +396,7 @@ def reference_form(request, pk=None):
         instance,
         "Edit Reference" if instance else "Create Reference",
         url_prefix="reference",
-        form_kwargs={"supervisor": supervisor}
+        form_kwargs={"supervisor": user_profile}
     )
 
 @external_user_permissions_required("delete_reference")
