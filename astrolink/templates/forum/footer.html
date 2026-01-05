@@ -1,0 +1,48 @@
+{% load static %}
+
+<footer class="bg-white border-top mt-auto">
+    <div class="container-fluid px-4 py-2">
+        <div class="row align-items-center gy-2">
+
+            <!-- LEFT: Partner logos -->
+            <div class="col-md d-flex flex-wrap align-items-center gap-3 justify-content-center justify-content-md-start">
+                <a href="https://www.siriusa.nl/" target="_blank" class="footer-logo">
+                    {% include "svgs/siriusa.svg" %}
+                </a>
+
+            </div>
+
+            <!-- CENTER: Copyright -->
+            <div class="col-md text-center small text-muted">
+                &copy; <span id="footer-year"></span> AstroLink
+            </div>
+
+            <!-- RIGHT: Privacy -->
+            <div class="col-md text-center text-md-end small">
+                <a href="{% static 'files/privacy-policy.pdf' %}"
+                   target="_blank"
+                   class="text-decoration-none text-muted">
+                    Privacy Policy
+                </a>
+            </div>
+
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.getElementById("footer-year").textContent = new Date().getFullYear();
+</script>
+
+<style>
+    .footer-logo svg {
+        height: 26px;
+        width: auto;
+        opacity: 0.75;
+        transition: opacity 0.2s ease;
+    }
+
+    .footer-logo:hover svg {
+        opacity: 1;
+    }
+</style>
