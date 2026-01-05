@@ -32,6 +32,11 @@
                 </div>
             {% endfor %}
 
+            {% if extra_form %}
+                <hr>
+                {{ extra_form.as_p }}
+            {% endif %}
+
             <div class="d-flex justify-content-between mt-4">
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save"></i> Save

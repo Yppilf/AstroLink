@@ -2,7 +2,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms
 import re
 from django.core.exceptions import ValidationError
-from authentication.models import User
+from authentication.models import User, Role
+from .models import SupervisorProfile, StudentProfile
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
@@ -62,3 +63,30 @@ class SignUpForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+class AdminSignUpForm(SignUpForm):
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.exclude(name="Own Data").exclude(name="External User")
+    )
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "screen_name",
+            "phone_number",
+        ]
+
+class SupervisorProfileForm(forms.ModelForm):
+    class Meta:
+        model = SupervisorProfile
+        fields = ["biography", "pnumber", "profile_picture"]
+
+
+class StudentProfileForm(forms.ModelForm):
+    class Meta:
+        model = StudentProfile
+        fields = ["study_programme", "level", "snumber"]

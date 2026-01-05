@@ -1,0 +1,20 @@
+{% if profile_user.role == "Supervisor" %}
+    <h5>Supervisor Details</h5>
+    <p><strong>Email:</strong> {{ profile_user.email }}</p>
+
+    {% if request.user == profile_user %}
+        <a href="{% url 'authentication:edit_profile' %}"
+           class="btn btn-primary btn-sm">
+            Edit Profile
+        </a>
+    {% endif %}
+
+{% elif profile_user.role == "Student" %}
+    <h5>Student Details</h5>
+    <p><strong>Email:</strong> {{ profile_user.email }}</p>
+
+{% else %}
+    <p>No profile data available.</p>
+    {{ profile_user.role }}
+    {{ role }}
+{% endif %}

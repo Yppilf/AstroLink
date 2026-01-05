@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+from django.utils.text import slugify
 
 class Role(models.Model):
     name = models.CharField(max_length=255)
@@ -26,7 +27,21 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
+def generate_unique_username(first_name, last_name):
+    base = slugify(f"{first_name}{last_name}") or "user"
+    username = base
+    counter = 1
+
+    from .models import User  # local import to avoid circular issues
+
+    while User.objects.filter(username=username).exists():
+        counter += 1
+        username = f"{base}{counter}"
+
+    return username
+
 class User(AbstractBaseUser, PermissionsMixin):
+    username = models.SlugField(max_length=150,unique=True,blank=True,editable=False,db_index=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     legal_name = models.CharField(max_length=255, blank=True, editable=False)
@@ -73,4 +88,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.email:
             self.email = self.email.lower()
 
+        if not self.username:
+            self.username = generate_unique_username(
+                self.first_name,
+                self.last_name
+            )
+
         super().save(*args, **kwargs)
+
+
+# ----------------------
+# Role-specific profiles
+# ----------------------
+class BaseProfile(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name="%(class)s")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+def supervisor_profile_picture_path(instance, filename):
+    return f"supervisors/{instance.user.id}/{filename}"
+
+class SupervisorProfile(BaseProfile):
+    biography = models.TextField(blank=True)
+    pnumber = models.CharField(max_length=64, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to=supervisor_profile_picture_path,null=True,blank=True)
+
+class StudentProfile(BaseProfile):
+    snumber = models.CharField(max_length=64, null=True, blank=True)
+    level = models.CharField(max_length=64, null=True, blank=True)
+    study_programme = models.CharField(max_length=128, blank=True)    
+

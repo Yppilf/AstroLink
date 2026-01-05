@@ -1,0 +1,79 @@
+{% extends "forum/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <!-- Header -->
+    <div class="card mb-4">
+        <div class="card-body d-flex align-items-center">
+            {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}"
+                     class="rounded-circle me-4"
+                     style="width: 96px; height: 96px; object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-secondary me-4"
+                     style="width: 96px; height: 96px;"></div>
+            {% endif %}
+
+            <div>
+                <h3 class="mb-0">{{ profile_user.display_name }}</h3>
+                <p class="text-muted mb-1">{{ profile_user.role }}</p>
+                {% if profile.biography %}
+                    <p class="mb-0">{{ profile.biography }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'overview' %}active{% endif %}"
+               href="?tab=overview">
+                Overview
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'data' %}active{% endif %}"
+               href="?tab=data">
+                Profile Data
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'other' %}active{% endif %}"
+               href="?tab=other">
+                Other
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="card">
+        <div class="card-body">
+
+            {% if active_tab == 'overview' %}
+                <p>This is the public overview tab.</p>
+
+            {% elif active_tab == 'data' %}
+                {% include "authentication/profiles/tabs/profile_data.html" %}
+
+            {% else %}
+                <p>Coming soon.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if request.user == profile_user %}
+        <a href="{% url 'authentication:edit_profile' %}"
+        class="btn btn-primary btn-sm">
+            Edit profile
+        </a>
+    {% endif %}
+
+
+</div>
+{% endblock %}

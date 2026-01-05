@@ -1,5 +1,5 @@
 from django.db import models
-# from core.models import User
+from authentication.models import User
 
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
@@ -17,8 +17,6 @@ class Supervisor(models.Model):
 
     def __str__(self):
         return self.name
-
-User = Supervisor
 
 class Reference(models.Model):
     supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE, related_name="references")
