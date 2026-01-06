@@ -11,7 +11,7 @@ from .forms import (
 from django.core.paginator import Paginator
 from django.db.models.fields.related import ForeignKey
 from django.contrib import messages
-from permissions.utils import external_user_permissions_required, has_permission
+from permissions.utils import external_user_permissions_required, has_permission, owns_application, owns_case_study, owns_project, owns_company, owns_application_nonstudent
 from django.template.loader import render_to_string
 from django.http import HttpResponseForbidden, JsonResponse
 from django.db.models import Q, F
@@ -287,7 +287,8 @@ def project_list_data(request):
         can_delete=can_delete,
     )
 
-@external_user_permissions_required("create_project", "update_project")
+@external_user_permissions_required("create_project", "update_project", object_model=Project,
+    ownership_checker=owns_project)
 def project_form(request, pk=None):
     user_profile = getattr(request.user, "supervisorprofile", None)
     if not user_profile:
@@ -305,7 +306,8 @@ def project_form(request, pk=None):
         form_kwargs={"supervisor": user_profile}
     )
 
-@external_user_permissions_required("delete_project")
+@external_user_permissions_required("delete_project", object_model=Project,
+    ownership_checker=owns_project)
 def project_delete(request, pk):
     user_profile = getattr(request.user, "supervisorprofile", None)
     if not user_profile:
@@ -314,7 +316,8 @@ def project_delete(request, pk):
     instance = get_object_or_404(Project, pk=pk, supervisor=user_profile)
     return generic_delete_view(request, instance, "Project", url_prefix="project")
 
-@external_user_permissions_required("read_project", "read_supervisor")
+@external_user_permissions_required("read_project", "read_supervisor", object_model=Project,
+    ownership_checker=owns_project)
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
 
@@ -326,7 +329,8 @@ def project_detail(request, pk):
 # -----------------------------------------------
 # COMPANY CRUD
 # -----------------------------------------------
-@external_user_permissions_required("read_company", "read_company2")
+# In the view its ensured only companies belonging to the association are retrieved so showing contact data is fine
+@external_user_permissions_required("read_company")
 def company_list(request):
     can_create = has_permission(request.user, "create_company")
     can_view = has_permission(request.user, "read_company")
@@ -335,7 +339,9 @@ def company_list(request):
 
     return generic_list_view(
         request,
-        Company.objects.all(),
+        Company.objects.filter(
+            association=request.user.associationprofile
+        ),
         "Company",
         url_prefix="company",
         columns=["name", "contact_name", "email", "contact_phone", "status"],
@@ -351,7 +357,9 @@ def company_list_data(request):
     can_update = has_permission(request.user, "update_company")
     can_delete = has_permission(request.user, "delete_company")
 
-    qs = Company.objects.all()
+    qs = Company.objects.filter(
+        association=request.user.associationprofile
+    )
 
     return generic_list_data(
         request,
@@ -364,8 +372,31 @@ def company_list_data(request):
         can_delete=can_delete,
     )
 
+@external_user_permissions_required(
+    "create_company",
+    "create_company2",
+    object_model=Company,
+    ownership_checker=owns_company,
+)
+def company_create_form(request):
+    return generic_form_view(
+        request,
+        CompanyForm,
+        None,
+        "Create Company",
+        url_prefix="company",
+        form_kwargs={"request": request},
+    )
 
-@external_user_permissions_required("create_company", "create_company2", "update_company", "update_company2")
+
+@external_user_permissions_required(
+    "create_company",
+    "create_company2",
+    "update_company",
+    "update_company2",
+    object_model=Company,
+    ownership_checker=owns_company,
+)
 def company_form(request, pk=None):
     instance = Company.objects.filter(pk=pk).first()
     return generic_form_view(
@@ -373,20 +404,24 @@ def company_form(request, pk=None):
         CompanyForm,
         instance,
         "Edit Company" if instance else "Create Company",
-        url_prefix="company"
+        url_prefix="company",
+        form_kwargs={"request": request},
     )
 
-@external_user_permissions_required("delete_company", "delete_company2")
+
+@external_user_permissions_required("delete_company", "delete_company2", object_model=Company,
+    ownership_checker=owns_company)
 def company_delete(request, pk):
     instance = get_object_or_404(Company, pk=pk)
     return generic_delete_view(request, instance, "Company", url_prefix="company")
 
-@external_user_permissions_required("read_company")
+@external_user_permissions_required("read_company", object_model=Company,
+    ownership_checker=owns_company)
 def company_detail(request, pk):
     company = get_object_or_404(Company, pk=pk)
     case_studies = company.case_studies.all().order_by("created_at")  # newest last
 
-    can_view = has_permission(request.user, "read_company2")
+    can_view = has_permission(request.user, "read_company2", owned_object=company, ownership_checker=owns_company)
     can_create_casestudy = has_permission(request.user, "create_casestudy")
     can_edit_casestudy = has_permission(request.user, "update_casestudy")
     can_delete_casestudy = has_permission(request.user, "delete_casestudy")
@@ -445,24 +480,50 @@ def casestudy_list_data(request):
         can_delete=can_delete,
     )
 
+# Because we cant check for ownership when creating
+@external_user_permissions_required(
+    "create_casestudy",
+    object_model=CaseStudy,
+    ownership_checker=owns_case_study,
+)
+def casestudy_create_form(request, pk=None):
+    return generic_form_view(
+        request,
+        CaseStudyForm,
+        None,
+        "Create Case Study",
+        url_prefix="casestudy",
+        form_kwargs={"request": request},
+    )
 
-@external_user_permissions_required("create_casestudy", "update_casestudy")
+
+@external_user_permissions_required(
+    "create_casestudy",
+    "update_casestudy",
+    object_model=CaseStudy,
+    ownership_checker=owns_case_study,
+)
 def casestudy_form(request, pk=None):
     instance = CaseStudy.objects.filter(pk=pk).first()
+
     return generic_form_view(
         request,
         CaseStudyForm,
         instance,
         "Edit Case Study" if instance else "Create Case Study",
-        url_prefix="casestudy"
+        url_prefix="casestudy",
+        form_kwargs={"request": request},
     )
 
-@external_user_permissions_required("delete_casestudy")
+
+@external_user_permissions_required("delete_casestudy", object_model=CaseStudy,
+    ownership_checker=owns_case_study)
 def casestudy_delete(request, pk):
     instance = get_object_or_404(CaseStudy, pk=pk)
     return generic_delete_view(request, instance, "Case Study", url_prefix="casestudy")
 
-@external_user_permissions_required("read_casestudy", "read_company")
+@external_user_permissions_required("read_casestudy", "read_company", object_model=CaseStudy,
+    ownership_checker=owns_case_study)
 def casestudy_detail(request, pk):
     case_study = get_object_or_404(CaseStudy, pk=pk)
 
@@ -659,7 +720,8 @@ def application_list_data(request):
 
 
 
-@external_user_permissions_required("create_application")
+@external_user_permissions_required("create_application",object_model=Application,
+    ownership_checker=owns_application)
 def application_form(request, pk=None):
     instance = Application.objects.filter(pk=pk).first()
 
@@ -684,12 +746,14 @@ def application_form(request, pk=None):
         success_message="Your application was submitted successfully!"
     )
 
-@external_user_permissions_required("delete_application")
+@external_user_permissions_required("delete_application",object_model=Application,
+    ownership_checker=owns_application)
 def application_delete(request, pk):
     instance = get_object_or_404(Application, pk=pk)
     return generic_delete_view(request, instance, "Application", url_prefix="application")
 
-@external_user_permissions_required("read_application")
+@external_user_permissions_required("read_application", object_model=Application,
+    ownership_checker=owns_application)
 def application_detail(request, pk):
     application = get_object_or_404(Application, pk=pk)
 
@@ -700,14 +764,21 @@ def application_detail(request, pk):
         None
     )
 
+    can_update_status = has_permission(request.user, "update_application", owned_object=application, ownership_checker=owns_application_nonstudent)
+
     return render(request, "forum/application_detail.html", {
         "application": application,
         "target": target,
         "target_type": target_type,
         "page_title": f"{application.member.display_name()}",
+        "can_update_status": can_update_status,
     })
 
-@external_user_permissions_required("update_application")
+@external_user_permissions_required(
+    "update_application",
+    object_model=Application,
+    ownership_checker=owns_application,
+)
 def application_status_update(request, pk):
     app = get_object_or_404(Application, pk=pk)
 

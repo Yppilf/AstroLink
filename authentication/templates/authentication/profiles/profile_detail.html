@@ -45,10 +45,12 @@
             </a>
         </li>
 
+        {% if is_self %}
         <li class="nav-item">
             <a class="nav-link {% if active_tab == 'applications' %}active{% endif %}"
             href="?tab=applications">My Applications</a>
         </li>
+        {% endif %}
 
         <li class="nav-item">
             <a class="nav-link {% if active_tab == 'data' %}active{% endif %}"

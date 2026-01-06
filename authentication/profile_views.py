@@ -48,7 +48,8 @@ def profile_detail(request, username):
     applications = None
     if request.GET.get("tab") == "applications":
         applications = get_applications_for_user(profile_user)
-        print(applications)
+
+    is_self = request.user.is_authenticated and request.user == profile_user
 
     return render(request, "authentication/profiles/profile_detail.html", {
         "profile_user": profile_user,
@@ -58,6 +59,7 @@ def profile_detail(request, username):
         "user_fields": user_fields,
         "profile_fields": profile_fields,
         "applications": applications,
+        "is_self": is_self,
         **extra_context
     })
 

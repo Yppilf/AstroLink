@@ -21,7 +21,7 @@ urlpatterns = [
 
     # COMPANIES
     path("companies/", views.company_list, name="company_list"),
-    path("companies/create/", views.company_form, name="company_create"),
+    path("companies/create/", views.company_create_form, name="company_create"),
     path("companies/update/<int:pk>/", views.company_form, name="company_update"),
     path("companies/delete/<int:pk>/", views.company_delete, name="company_delete"),
     path("companies/<int:pk>/", views.company_detail, name="company_detail"),
@@ -29,7 +29,7 @@ urlpatterns = [
 
     # CASE STUDIES
     path("casestudies/", views.casestudy_list, name="casestudy_list"),
-    path("casestudies/create/", views.casestudy_form, name="casestudy_create"),
+    path("casestudies/create/", views.casestudy_create_form, name="casestudy_create"),
     path("casestudies/update/<int:pk>/", views.casestudy_form, name="casestudy_update"),
     path("casestudies/delete/<int:pk>/", views.casestudy_delete, name="casestudy_delete"),
     path("casestudies/<int:pk>/", views.casestudy_detail, name="casestudy_detail"),

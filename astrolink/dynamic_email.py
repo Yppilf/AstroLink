@@ -51,7 +51,7 @@ def send_dynamic_email(recipients, template_id, dynamic_data):
         send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
             to=[{"email": email} for email in recipients],
             sender={"email": "noreply@siriusa.nl", "name": "Sirius A"},
-            reply_to={"email": "board@siriusa.nl"},
+            reply_to={"email": "astrolink@siriusa.nl"},
             template_id=template_id,
             params=dynamic_data  # Matches {{ params.key }} in template
         )

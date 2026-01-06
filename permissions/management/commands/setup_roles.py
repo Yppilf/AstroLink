@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application
-from authentication.models import Role, SupervisorProfile, StudentProfile
+from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile
 
 class Command(BaseCommand):
     help = 'Set up roles and permissions'
@@ -33,7 +33,10 @@ class Command(BaseCommand):
 
         # Define permissions and their respective groups
         permissions = [
+            ('user', User, ["create", "read", "update", "delete"]),
             ('supervisor', SupervisorProfile, ["create", "read", "update", "delete"]),
+            ('student', StudentProfile, ["create", "read", "update", "delete"]),
+            ('association', AssociationProfile, ["create", "read", "update", "delete"]),
             ('reference', Reference, ["create", "read", "update", "delete"]),
             ('interest', Interest, ["create", "read", "update", "delete"]),
             ('project', Project, ["create", "read", "update", "delete"]),
@@ -66,62 +69,74 @@ class Command(BaseCommand):
         role_permissions = {
             'System Admin': [
                 'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
-                'create_interest', 'read_interest', 'update_interest', 'delete_interest',
-                'create_project', 'read_project', 'update_project', 'delete_project',
-                'create_company', 'read_company', 'update_company', 'delete_company',
-                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
-                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
+                'create_student', 'read_student', 'update_student', 'delete_student',
+                'create_association', 'read_association', 'update_association', 'delete_association',
+                'read_reference',
+                'read_interest',
+                'read_project',
+                'read_casestudy',
                 'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
-                'create_application', 'read_application', 'update_application', 'delete_application',
             ], 
             'Supervisor': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
-                'create_project', 'read_project', 'update_project', 'delete_project',
-                'create_company', 'read_company', 'update_company', 'delete_company',
-                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
-                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
-                'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
-                'create_application', 'read_application', 'update_application', 'delete_application',
-                # TODO
+                'read_supervisor', 
+                'read_student',
+                'read_association',
+                'read_reference', 
+                'read_project', 
+                'read_company',
+                'read_casestudy',
+                'read_researchgroup',
             ],  
             'Association': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
-                'create_project', 'read_project', 'update_project', 'delete_project',
-                'create_company', 'read_company', 'update_company', 'delete_company',
-                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
-                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
-                'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
-                'create_application', 'read_application', 'update_application', 'delete_application',
-                # TODO
+                'read_supervisor',
+                'read_student',
+                'read_association', 
+                'read_interest',
+                'read_reference',
+                'read_project',
+                'create_company', 'read_company', 
+                'create_company2', 
+                'create_casestudy', 'read_casestudy',
+                'read_researchgroup',
+
+                'create_researchgroup', 'update_researchgroup', 'delete_researchgroup',
             ],  
             'Own Data': [ 
-                # TODO
+                'read_user',
+                
+                # For Students
+                'read_student', 'update_student',
+                'read_application',
+
+                # For Associations
+                'update_association',
+                'read_application', 'update_application',
+                'update_company', 'delete_company',
+                'read_company2', 'update_company2', 'delete_company2',
+                'update_casestudy', 'delete_casestudy',
+
+                # For Supervisors
+                'update_supervisor',
+                'create_reference', 'update_reference', 'delete_reference',
+                'create_project', 'update_project', 'delete_project',
+                'read_application', 'update_application',
             ],
             'Student': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
-                'create_interest', 'read_interest', 'update_interest', 'delete_interest',
-                'create_project', 'read_project', 'update_project', 'delete_project',
-                'create_company', 'read_company', 'update_company', 'delete_company',
-                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
-                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
-                'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
-                'create_application', 'read_application', 'update_application', 'delete_application',
-                # TODO
+                'read_supervisor',
+                'read_student',
+                'read_association', 
+                'read_reference',
+                'read_interest',
+                'read_project',
+                'read_company',
+                'read_casestudy',
+                'read_researchgroup',
+                'create_application', 
+
+                'create_interest', 'update_interest', 'delete_interest',
             ],
             'External User': [
-                'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_reference', 'read_reference', 'update_reference', 'delete_reference',
-                'create_project', 'read_project', 'update_project', 'delete_project',
-                'create_company', 'read_company', 'update_company', 'delete_company',
-                'create_company2', 'read_company2', 'update_company2', 'delete_company2',
-                'create_casestudy', 'read_casestudy', 'update_casestudy', 'delete_casestudy',
-                'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
-                'create_application', 'read_application', 'update_application', 'delete_application',
-                # TODO
+                # Non-authenticated users do not get any permissions on this website
             ],
             
         }

@@ -87,44 +87,98 @@ class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
         fields = [
-            'name',
-            'description',
-            'email',
-            'contact_name',
-            'contact_phone',
-            'website',
-            'status',
-            'logo',
+            "name",
+            "description",
+            "email",
+            "contact_name",
+            "contact_phone",
+            "website",
+            "status",
+            "logo",
         ]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'logo': forms.FileInput(),
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "logo": forms.FileInput(),
         }
 
+    def __init__(self, *args, request=None, **kwargs):
+        self.request = request
+        super().__init__(*args, **kwargs)
+
     def clean_email(self):
-        return validate_email(self.cleaned_data['email'])
+        return validate_email(self.cleaned_data["email"])
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+
+        # Only set association on CREATE
+        if obj.pk is None:
+            if not self.request or not hasattr(self.request.user, "associationprofile"):
+                raise ValueError("Association user required to create a company")
+
+            obj.association = self.request.user.associationprofile
+
+        if commit:
+            obj.save()
+            self.save_m2m()
+
+        return obj
+
 
 
 class CaseStudyForm(forms.ModelForm):
     company = forms.ModelChoiceField(
-        queryset=Company.objects.all(),
+        queryset=Company.objects.none(),
         label="Company",
     )
+
     class Meta:
         model = CaseStudy
-        fields = ['title', 'company', 'logo', 'description', 'revenue_split_notes', 'time_estimate']
+        fields = [
+            "title",
+            "company",
+            "logo",
+            "description",
+            "revenue_split_notes",
+            "time_estimate",
+        ]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'revenue_split_notes': forms.Textarea(attrs={'rows': 3}),
-            'logo': forms.FileInput(),
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "revenue_split_notes": forms.Textarea(attrs={"rows": 3}),
+            "logo": forms.FileInput(),
         }
-    
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args, request=None, **kwargs):
+        self.request = request
         super().__init__(*args, **kwargs)
 
-        self.fields['company'].label_from_instance = (
+        if not request or not hasattr(request.user, "associationprofile"):
+            self.fields["company"].queryset = Company.objects.none()
+            return
+
+        association = request.user.associationprofile
+
+        self.fields["company"].queryset = Company.objects.filter(
+            association=association
+        )
+
+        self.fields["company"].label_from_instance = (
             lambda obj: f"{obj.name} — {obj.get_status_display()}"
         )
+
+    def clean_company(self):
+        company = self.cleaned_data["company"]
+
+        if not hasattr(self.request.user, "associationprofile"):
+            raise forms.ValidationError("Only associations can create case studies.")
+
+        if company.association_id != self.request.user.associationprofile.id:
+            raise forms.ValidationError(
+                "You may only create case studies for your own companies."
+            )
+
+        return company
+
 
 class ResearchGroupForm(forms.ModelForm):
     class Meta:

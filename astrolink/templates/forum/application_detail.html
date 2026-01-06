@@ -32,9 +32,11 @@
             <h4>Status: {{ application.get_status_display }}</h4>
 
             <!-- Button to trigger modal -->
+            {% if can_update_status %}
             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
                 Change Status
             </button>
+            {% endif %}
 
             <!-- Modal -->
             <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">

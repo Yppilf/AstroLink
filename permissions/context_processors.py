@@ -9,7 +9,7 @@ def global_permissions(request):
     )
 
     can_manage_companies = (
-        has_permission(user, "create_company")
+        has_permission(user, "read_company")
         and has_permission(user, "create_company2")
     )
 

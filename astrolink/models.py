@@ -1,5 +1,5 @@
 from django.db import models
-from authentication.models import User, SupervisorProfile, StudentProfile
+from authentication.models import User, SupervisorProfile, StudentProfile, AssociationProfile
 
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
@@ -54,6 +54,7 @@ class Company(models.Model):
     website = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     logo = models.ImageField(upload_to=company_logo_path, null=True, blank=True)
+    association = models.ForeignKey(AssociationProfile, on_delete=models.CASCADE, related_name="companies")
 
     def __str__(self):
         return self.name

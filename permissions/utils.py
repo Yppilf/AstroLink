@@ -4,11 +4,105 @@ from functools import wraps
 from django.template.loader import render_to_string
 from django.http import HttpResponseForbidden
 from authentication.models import User
+from astrolink.models import Application
 
 logger = logging.getLogger('core.permissions')
 
+def owns_application(user, application):
+    if not user.is_authenticated:
+        return False
 
-def has_permission(user, permission, target_user=None, check_isself=False):
+    if application.member_id == user.id:
+        return True
+
+    if application.project and application.project.supervisor:
+        return application.project.supervisor.user_id == user.id
+
+    if (
+        application.case_study
+        and application.case_study.company
+        and application.case_study.company.association
+    ):
+        return application.case_study.company.association.user_id == user.id
+    
+    if (
+        application.project is None
+        and application.case_study is None
+        and hasattr(user, "associationprofile")
+    ):
+        return True
+
+    return False
+
+def owns_application_nonstudent(user, application):
+    if not user.is_authenticated:
+        return False
+
+    if user.role == "Student":
+        return False
+
+    if application.project and application.project.supervisor:
+        return application.project.supervisor.user_id == user.id
+
+    if (
+        application.case_study
+        and application.case_study.company
+        and application.case_study.company.association
+    ):
+        return application.case_study.company.association.user_id == user.id
+
+    if (
+        application.project is None
+        and application.case_study is None
+        and hasattr(user, "associationprofile")
+    ):
+        return True
+
+    return False
+
+
+def owns_project(user, project):
+    if not user.is_authenticated:
+        return False
+
+    return (
+        project.supervisor
+        and project.supervisor.user_id == user.id
+    )
+
+
+def owns_case_study(user, case_study):
+    if not user.is_authenticated:
+        return False
+    
+    if not hasattr(user, "associationprofile"):
+        return False
+
+    return (
+        case_study.company
+        and case_study.company.association
+        and case_study.company.association.user_id == user.id
+    )
+
+def owns_company(user, company):
+    if not user.is_authenticated:
+        return False
+
+    return (
+        company.association
+        and company.association.user_id == user.id
+    )
+
+
+def has_permission(
+    user,
+    permission,
+    *,
+    target_user=None,
+    check_isself=False,
+    owned_object=None,
+    ownership_checker=None,
+):
     """
     Check if a user has a specific permission, considering self-access if applicable.
 
@@ -49,38 +143,68 @@ def has_permission(user, permission, target_user=None, check_isself=False):
     if is_self:
         try:
             own_data_group = Group.objects.get(name="Own Data")
-            own_data_permissions = own_data_group.permissions.values_list("codename", flat=True)
-            user_permissions.update(own_data_permissions)
+            user_permissions.update(
+                own_data_group.permissions.values_list("codename", flat=True)
+            )
         except Group.DoesNotExist:
-            logger.warning("The 'own_data' group is not defined in the system.")
+            logger.warning("'Own Data' group missing")
+
+    # Object ownership
+    if owned_object and ownership_checker:
+        try:
+            if ownership_checker(user, owned_object):
+                own_data_group = Group.objects.get(name="Own Data")
+                user_permissions.update(
+                    own_data_group.permissions.values_list("codename", flat=True)
+                )
+        except Group.DoesNotExist:
+            logger.warning("'Own Data' group missing")
 
     # Check if the required permission is in the user's permissions
     return permission in user_permissions
 
-def external_user_permissions_required(*permission_codenames, check_isself=False):
+def external_user_permissions_required(
+    *permission_codenames,
+    check_isself=False,
+    object_model=None,
+    ownership_checker=None,
+):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            user_id = kwargs.get("user_id")
-            if user_id:
-                target_user = User.objects.filter(id=user_id).first()
-            elif check_isself:
-                target_user = request.user
-            else:
-                target_user = None
 
-            # Permission check
+            # Target user (profiles)
+            user_id = kwargs.get("user_id")
+            target_user = (
+                User.objects.filter(id=user_id).first()
+                if user_id else request.user if check_isself else None
+            )
+
+            # Resolve owned object
+            owned_object = None
+            if object_model:
+                owned_object = (
+                    object_model.objects
+                    .select_related()
+                    .filter(pk=kwargs.get("pk"))
+                    .first()
+                )
+
             for perm in permission_codenames:
                 if not has_permission(
                     request.user,
                     perm,
                     target_user=target_user,
                     check_isself=check_isself,
+                    owned_object=owned_object,
+                    ownership_checker=ownership_checker,
                 ):
-                    logger.warning(f"User {request.user} is missing required permission: {perm}")
-                    return HttpResponseForbidden(render_to_string("forum/403.html", request=request))
-
+                    print(f"User {request.user} is missing permission {perm}")
+                    return HttpResponseForbidden(
+                        render_to_string("forum/403.html", request=request)
+                    )
 
             return view_func(request, *args, **kwargs)
+
         return _wrapped_view
     return decorator
