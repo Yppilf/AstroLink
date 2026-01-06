@@ -79,10 +79,33 @@ function updateSortArrows() {
     });
 }
 
+function renderNoResults(message = "No results found.") {
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="{{ columns|length }}{% if has_actions %}1{% endif %}"
+                class="text-center text-muted py-4">
+                ${message}
+            </td>
+        </tr>
+    `;
+
+    // Hide pagination when there's nothing to paginate
+    document.getElementById("pagination").innerHTML = "";
+}
 
 function renderRows(rows) {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
+
+    if (!rows || rows.length === 0) {
+        renderNoResults(
+            currentSearch
+                ? "No results match your search."
+                : "No {{ object_name|lower }} available."
+        );
+        return;
+    }
 
     // Match YYYY-MM-DD or YYYY-MM-DD HH:MM:SS[.micro][+TZ]
     const dateRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2})?)?$/;
