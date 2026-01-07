@@ -81,8 +81,8 @@ class Command(BaseCommand):
                 'read_supervisor', 
                 'read_student',
                 'read_association',
-                'read_reference', 
-                'read_project', 
+                'create_reference', 'read_reference', 'update_reference',  
+                'create_project', 'read_project', 'update_project',
                 'read_company',
                 'read_casestudy',
                 'read_researchgroup',
@@ -117,8 +117,8 @@ class Command(BaseCommand):
 
                 # For Supervisors
                 'update_supervisor',
-                'create_reference', 'update_reference', 'delete_reference',
-                'create_project', 'update_project', 'delete_project',
+                'delete_reference',
+                'delete_project',
                 'read_application', 'update_application',
             ],
             'Student': [

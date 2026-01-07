@@ -422,9 +422,9 @@ def company_detail(request, pk):
     case_studies = company.case_studies.all().order_by("created_at")  # newest last
 
     can_view = has_permission(request.user, "read_company2", owned_object=company, ownership_checker=owns_company)
-    can_create_casestudy = has_permission(request.user, "create_casestudy")
-    can_edit_casestudy = has_permission(request.user, "update_casestudy")
-    can_delete_casestudy = has_permission(request.user, "delete_casestudy")
+    can_create_casestudy = has_permission(request.user, "create_casestudy", owned_object=company, ownership_checker=owns_company)
+    can_edit_casestudy = has_permission(request.user, "update_casestudy", owned_object=company, ownership_checker=owns_company)
+    can_delete_casestudy = has_permission(request.user, "delete_casestudy", owned_object=company, ownership_checker=owns_company)
 
     return render(request, "forum/company_detail.html", {
         "company": company,
@@ -603,7 +603,7 @@ def researchgroup_detail(request, pk):
 # REFERENCE CRUD
 # -----------------------------------------------
 def reference_list(request):
-    return redirect("astrolink:supervisor_list")
+    return redirect("authentication:my_profile")
 
 @external_user_permissions_required("create_reference", "update_reference")
 def reference_form(request, pk=None):
