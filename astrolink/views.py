@@ -143,8 +143,9 @@ def generic_list_data(
     })
 
 
-def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None):
-    list_url = reverse(f"astrolink:{url_prefix}_list")
+def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None, list_url=None):
+    if not list_url:
+        list_url = reverse(f"astrolink:{url_prefix}_list")
     next_url = request.POST.get("next") or request.GET.get("next")
 
     if request.method == "POST":
@@ -750,7 +751,8 @@ def application_form(request, pk=None):
         "Edit Application" if pk else "Create Application",
         url_prefix="application",
         form_kwargs={"request": request},
-        success_message="Your application was submitted successfully!"
+        success_message="Your application was submitted successfully!",
+        list_url = reverse("astrolink:forum_home"),
     )
 
 @external_user_permissions_required("delete_application",object_model=Application,
@@ -773,12 +775,24 @@ def application_detail(request, pk):
 
     can_update_status = has_permission(request.user, "update_application", owned_object=application, ownership_checker=owns_application_nonstudent)
 
+    # Fetch related applications if not general
+    related_applications = []
+    if application.project:
+        related_applications = Application.objects.filter(
+            project=application.project
+        ).exclude(pk=application.pk)
+    elif application.case_study:
+        related_applications = Application.objects.filter(
+            case_study=application.case_study
+        ).exclude(pk=application.pk)
+
     return render(request, "forum/application_detail.html", {
         "application": application,
         "target": target,
         "target_type": target_type,
         "page_title": f"{application.member.display_name()}",
         "can_update_status": can_update_status,
+        "related_applications": related_applications,
     })
 
 @external_user_permissions_required(

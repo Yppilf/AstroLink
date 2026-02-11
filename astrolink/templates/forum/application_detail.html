@@ -3,91 +3,120 @@
 {% block content %}
 <div class="container mt-4">
 
-    <div class="bg-light p-4 rounded shadow-sm mb-4">
-        <h2>Application by {{ application.member.display_name }}</h2>
+    <!-- --- Top application + sidebar (if target exists) --- -->
+    <div class="row mb-4">
+        <!-- Left column: main card -->
+        <div class="{% if target %}col-lg-8{% else %}col-12{% endif %} mb-3">
+            <div class="bg-light p-4 rounded shadow-sm" id="main-application-card">
+                <h2>Application by {{ application.member.display_name }}</h2>
 
-        <p class="text-muted mb-1">
-            <strong>Submitted for:</strong>
-            {% if target %}
-                {% if target_type == "Project" %}
-                    <a href="{% url 'astrolink:project_detail' target.pk %}" target="_blank">
-                        Project — {{ target.title }}
+                <p class="text-muted mb-1">
+                    <strong>Submitted for:</strong>
+                    {% if target %}
+                        {% if target_type == "Project" %}
+                            <a href="{% url 'astrolink:project_detail' target.pk %}" target="_blank">
+                                Project — {{ target.title }}
+                            </a>
+                        {% elif target_type == "Case Study" %}
+                            <a href="{% url 'astrolink:casestudy_detail' target.pk %}" target="_blank">
+                                Case Study — {{ target.title }}
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">General application — no project or case study</span>
+                    {% endif %}
+                </p>
+
+                <p class="text-muted mb-1">
+                    <strong>Submitted by:</strong>
+                    <a href="{% url 'authentication:profile_detail' application.member.username %}" target="_blank">
+                        {{ application.member.display_name }}
                     </a>
-                {% elif target_type == "Case Study" %}
-                    <a href="{% url 'astrolink:casestudy_detail' target.pk %}" target="_blank">
-                        Case Study — {{ target.title }}
-                    </a>
-                {% endif %}
-            {% else %}
-                <span class="text-danger">No project or case study selected</span>
-            {% endif %}
-        </p>
+                </p>
 
-        <p class="text-muted mb-1">
-            <strong>Submitted by:</strong> <a href="{% url 'authentication:profile_detail' application.member.username %}" target="_blank">{{ application.member.display_name }}</a>
-        </p>
-
-        <!-- Status -->
-        <div class="mb-4">
-            <h4>Status: {{ application.get_status_display }}</h4>
-
-            <!-- Button to trigger modal -->
-            {% if can_update_status %}
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
-                Change Status
-            </button>
-            {% endif %}
-
-            <!-- Modal -->
-            <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                <form method="POST" action="{% url 'astrolink:application_status_update' application.pk %}">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="statusModalLabel">Update Status</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                    <select name="status" class="form-select">
-                        {% for value, label in application.STATUS_CHOICES %}
-                        <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
-                            {{ label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    </div>
-                </form>
+                <!-- Status -->
+                <div class="mb-4">
+                    <h4>Status: {{ application.get_status_display }}</h4>
+                    {% if can_update_status %}
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
+                            Change Status
+                        </button>
+                    {% endif %}
                 </div>
-            </div>
             </div>
         </div>
 
+        <!-- Right column: related applications -->
+        {% if target %}
+        <div class="col-lg-4 mb-3">
+            <div class="card shadow-sm" style="overflow-y:auto;" id="related-applications-card">
+                <div class="card-header">
+                    Other applications for this {{ target_type|lower }}
+                    <span class="badge bg-secondary ms-2">{{ related_applications|length }}</span>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% if related_applications %}
+                        {% for app in related_applications %}
+                        <a href="{% url 'astrolink:application_detail' app.pk %}" class="list-group-item list-group-item-action">
+                            {{ app.member.display_name }} — 
+                            <span class="badge bg-primary">{{ app.get_status_display }}</span>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-muted">
+                            No other applications yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
-    <!-- Experience -->
+    <!-- --- Status modal outside row --- -->
+    {% if can_update_status %}
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{% url 'astrolink:application_status_update' application.pk %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="statusModalLabel">Update Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select name="status" class="form-select">
+                            {% for value, label in application.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- --- Full-width detail sections (always) --- -->
     <div class="mb-4">
         <h4>Experience</h4>
         <p>{{ application.experience|linebreaks }}</p>
     </div>
-
-    <!-- Motivation -->
     <div class="mb-4">
         <h4>Motivation</h4>
         <p>{{ application.motivation|linebreaks }}</p>
     </div>
-
-    <!-- Interest -->
     <div class="mb-4">
         <h4>Interest</h4>
         <p>{{ application.interest|linebreaks }}</p>
     </div>
-
-    <!-- Comments -->
     {% if application.comments %}
     <div class="mb-4">
         <h4>Comments</h4>
@@ -96,4 +125,15 @@
     {% endif %}
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const mainCard = document.getElementById("main-application-card");
+    const sidebarCard = document.getElementById("related-applications-card");
+    if (mainCard && sidebarCard) {
+        sidebarCard.style.maxHeight = mainCard.offsetHeight + "px";
+    }
+});
+</script>
+
 {% endblock %}
