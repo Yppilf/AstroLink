@@ -43,8 +43,6 @@ body {
     z-index: 1000;
 }
 
-
-
 /* ================================================
    SIDEBAR LAYOUT
 ================================================ */
@@ -52,7 +50,6 @@ body {
     display: flex;
     min-height: 100vh;
 }
-
 
 #sidebar {
     width: var(--sidebar-width);

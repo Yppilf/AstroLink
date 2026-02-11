@@ -12,7 +12,6 @@ from astrolink.utils import get_applications_for_user
 def my_profile(request):
     return profile_detail(request, request.user.username)
 
-
 @login_required
 def profile_detail(request, username):
     profile_user = get_object_or_404(User, username=username)

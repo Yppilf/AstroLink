@@ -100,6 +100,7 @@ class Application(models.Model):
     member = models.ForeignKey(User, on_delete=models.CASCADE, related_name="member")
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.SET_NULL, related_name="project")
     case_study = models.ForeignKey(CaseStudy, null=True, blank=True, on_delete=models.SET_NULL, related_name="case_study")
+    association = models.ForeignKey(AssociationProfile,null=True, blank=True,on_delete=models.SET_NULL,related_name="applications",help_text="Required for general applications")
     experience = models.TextField()
     motivation = models.TextField()
     interest = models.TextField()
@@ -112,3 +113,7 @@ class Application(models.Model):
     @property
     def status_display(self):
         return self.get_status_display()
+    
+    @property
+    def is_general(self):
+        return not self.project and not self.case_study

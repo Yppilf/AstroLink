@@ -28,7 +28,8 @@ def owns_application(user, application):
     if (
         application.project is None
         and application.case_study is None
-        and hasattr(user, "associationprofile")
+        and application.association
+        and application.association.user == user
     ):
         return True
 
@@ -54,7 +55,8 @@ def owns_application_nonstudent(user, application):
     if (
         application.project is None
         and application.case_study is None
-        and hasattr(user, "associationprofile")
+        and application.association
+        and application.association.user == user
     ):
         return True
 

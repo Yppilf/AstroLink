@@ -1,6 +1,6 @@
 from django import forms
 from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company, Interest
-from authentication.models import SupervisorProfile
+from authentication.models import SupervisorProfile, AssociationProfile
 import re
 
 # Helper email validator
@@ -192,7 +192,6 @@ class ResearchGroupForm(forms.ModelForm):
         return validate_email(self.cleaned_data['contact_email'])
 
 class ApplicationForm(forms.ModelForm):
-
     project = forms.ModelChoiceField(
         queryset=Project.objects.all(),
         required=False,
@@ -205,10 +204,16 @@ class ApplicationForm(forms.ModelForm):
         empty_label="Select a Case Study (optional)",
     )
 
+    association = forms.ModelChoiceField(
+        queryset=AssociationProfile.objects.all(),
+        required=False,
+        empty_label="Select an Association"
+    )
+
     class Meta:
         model = Application
         fields = [
-            'project', 'case_study',
+            'project', 'case_study', 'association',
             'experience', 'motivation',
             'interest', 'comments'
         ]
@@ -232,17 +237,26 @@ class ApplicationForm(forms.ModelForm):
             return
 
         # Hide case study if project pre-filled
-        if instance and instance.project:
-            self.fields.pop("case_study", None)
+        if instance:
+            # Project selected → no case study or association
+            if instance.project:
+                self.fields.pop("case_study", None)
+                self.fields.pop("association", None)
 
-        # Hide project if case study pre-filled
-        elif instance and instance.case_study:
-            self.fields.pop("project", None)
+            # Case study selected → no project or association
+            elif instance.case_study:
+                self.fields.pop("project", None)
+                self.fields.pop("association", None)
+
+            # General application → no project/case study
+            else:
+                self.fields.pop("project", None)
+                self.fields.pop("case_study", None)
 
         # Custom labels for dropdowns
         if "project" in self.fields:
             self.fields['project'].label_from_instance = (
-                lambda obj: f"{obj.title} (Supervisor: {obj.supervisor.user.display_name})"
+                lambda obj: f"{obj.title} (Supervisor: {obj.supervisor.user.display_name()})"
             )
 
         if "case_study" in self.fields:
@@ -261,11 +275,24 @@ class ApplicationForm(forms.ModelForm):
         cleaned_data = super().clean()
         project = cleaned_data.get("project")
         case_study = cleaned_data.get("case_study")
+        association = cleaned_data.get("association")
 
-        # Only one or neither may be selected
+        # Mutual exclusivity
         if project and case_study:
             raise forms.ValidationError(
                 "You may select either a project OR a case study, not both."
+            )
+
+        # General application requires association
+        if not project and not case_study and not association:
+            raise forms.ValidationError(
+                "Please select an association for a general application."
+            )
+
+        # Project / case study must NOT have association
+        if (project or case_study) and association:
+            raise forms.ValidationError(
+                "Association is determined automatically for project or case study applications."
             )
 
         return cleaned_data

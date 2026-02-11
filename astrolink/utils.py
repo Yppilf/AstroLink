@@ -32,8 +32,7 @@ def get_applications_for_user(user):
                 case_study__company__association__user=user
             ) |
             Q(
-                project__isnull=True,
-                case_study__isnull=True
+                association__user=user
             )
         )
 

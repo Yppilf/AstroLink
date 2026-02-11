@@ -722,8 +722,6 @@ def application_list_data(request):
         can_delete=can_delete,
     )
 
-
-
 @external_user_permissions_required("create_application",object_model=Application,
     ownership_checker=owns_application)
 def application_form(request, pk=None):
