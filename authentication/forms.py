@@ -75,6 +75,18 @@ class AdminSignUpForm(SignUpForm):
         queryset=Role.objects.exclude(name="Own Data").exclude(name="External User")
     )
 
+class SupervisorSignUpForm(SignUpForm):
+    class Meta(SignUpForm.Meta):
+        model = User
+        fields = SignUpForm.Meta.fields  # same fields as regular signup
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Instructions for pending approval
+        self.instructions = (
+            "By signing up as a supervisor, your account will be created but will require approval "
+            "by an administrator before you can log in."
+        )
 
 class UserProfileForm(forms.ModelForm):
     class Meta:

@@ -97,6 +97,16 @@
             </li>
             {% endif %}
 
+            <!-- Companies -->
+            {% if can_approve_supervisors %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% if request.resolver_match.url_name == 'authentication:pending_supervisors' %}active{% endif %}"
+                href="{% url 'authentication:pending_supervisors' %}">
+                    <i class="bi bi-person-check"></i> Approve Supervisors
+                </a>
+            </li>
+            {% endif %}
+
         </ul>
 
         <div class="sidebar-footer border-top p-3">
