@@ -12,6 +12,8 @@ from django.http import JsonResponse
 from django.db.models import F, Q
 from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
+from astrolink.dynamic_email import send_dynamic_email
+from datetime import datetime
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -75,13 +77,14 @@ def register_view(request):
             if student_role:
                 assign_role(user, student_role)
 
-            TEMPLATE_ID = 1
+            TEMPLATE_ID = 5
             RECIPIENTS = user.email
             DYNAMIC_DATA = {
-                'member_name': user.display_name(),
+                'username': user.display_name(),
+                'year': datetime.now().year
             }
 
-            # send_dynamic_email(RECIPIENTS, TEMPLATE_ID, DYNAMIC_DATA)
+            send_dynamic_email(RECIPIENTS, TEMPLATE_ID, DYNAMIC_DATA)
 
             return redirect('astrolink:forum_home')
     else:
@@ -92,10 +95,8 @@ def supervisor_register_view(request):
     if request.method == "POST":
         form = SupervisorSignUpForm(request.POST)
         if form.is_valid():
-            # Save user first to get a PK
-            user = form.save(commit=True)  # <-- save immediately, user now has PK
-            
-            # Assign supervisor role
+            user = form.save(commit=True)
+
             supervisor_role = Role.objects.filter(name="Supervisor").first()
             if supervisor_role:
                 assign_role(user, supervisor_role)
@@ -104,8 +105,7 @@ def supervisor_register_view(request):
             user.is_active = False
             user.save(update_fields=['is_active'])  # only update is_active
             
-            # Create profile
-            SupervisorProfile.objects.create(user=user)
+            SupervisorProfile.objects.get_or_create(user=user)
 
             messages.info(
                 request,
@@ -202,10 +202,29 @@ def approve_supervisor(request, user_id):
     user.is_active = True
     user.save()
     messages.success(request, f"{user.display_name()} has been approved.")
+
+    TEMPLATE_ID = 6
+    RECIPIENTS = user.email
+    DYNAMIC_DATA = {
+        'username': user.display_name(),
+        'year': datetime.now().year
+    }
+
+    send_dynamic_email(RECIPIENTS, TEMPLATE_ID, DYNAMIC_DATA)
+
     return redirect("authentication:pending_supervisors")
 
 @external_user_permissions_required('create_supervisor', 'create_student', 'create_association')
 def admin_register_view(request):
+    ROLE_EMAIL_TEMPLATES = {
+        "Student": 5,
+        "Supervisor": 6,
+        "Association": 7,
+    }
+
+    DEFAULT_TEMPLATE_ID = 5
+
+
     if request.method == "POST":
         form = AdminSignUpForm(request.POST)
         if form.is_valid():
@@ -213,13 +232,13 @@ def admin_register_view(request):
             role = form.cleaned_data["role"]
             assign_role(user, role)
 
-            TEMPLATE_ID = 1
+            TEMPLATE_ID = ROLE_EMAIL_TEMPLATES.get(role.name, DEFAULT_TEMPLATE_ID)
             RECIPIENTS = user.email
             DYNAMIC_DATA = {
-                'member_name': user.display_name(),
+                'username': user.display_name(),
+                'year': datetime.now().year
             }
-
-            # send_dynamic_email(RECIPIENTS, TEMPLATE_ID, DYNAMIC_DATA)
+            send_dynamic_email(RECIPIENTS, TEMPLATE_ID, DYNAMIC_DATA)
 
             return redirect("authentication:profile_detail", username=user.username)
     else:

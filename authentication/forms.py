@@ -30,7 +30,7 @@ class SignUpForm(UserCreationForm):
     def __init__(self, *args, request=None, instance=None, **kwargs):
         super().__init__(*args, instance=instance, **kwargs)
         self.instructions = (
-            "Note that by signing up here, you will be registering as a student. If you want to register as supervisor or any other role, please contact sirius@astro.rug.nl"
+            "Note that by signing up here, you will be registering as a student. If you have any questions, contact astrolink@siriusa.nl"
         )
 
     def clean_email(self):

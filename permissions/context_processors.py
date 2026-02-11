@@ -17,8 +17,15 @@ def global_permissions(request):
         has_permission(user, "create_supervisor")
     )
 
+    can_admin_register = (
+        has_permission(user, "create_student") and
+        has_permission(user, "create_supervisor") and
+        has_permission(user, "create_association")
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
         "can_approve_supervisors": can_approve_supervisors,
+        "can_admin_register": can_admin_register,
     }
