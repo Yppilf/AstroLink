@@ -10,56 +10,92 @@
 
     <div class="row g-4">
 
-        <!-- Projects -->
-        <div class="col-md-4">
-            <a href="{% url 'astrolink:project_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 feature-card">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="bi bi-folder-fill fs-2 me-3 text-primary"></i>
-                            <h5 class="card-title mb-0">Projects</h5>
+        {% if can_apply %}
+            <!-- Projects -->
+            <div class="col-md-4">
+                <a href="{% url 'astrolink:project_list' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 feature-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-folder-fill fs-2 me-3 text-primary"></i>
+                                <h5 class="card-title mb-0">Projects</h5>
+                            </div>
+                            <p class="card-text text-muted">
+                                Browse available academic and industry projects, filter by topic, and explore collaboration opportunities.
+                            </p>
                         </div>
-                        <p class="card-text text-muted">
-                            Browse available academic and industry projects, filter by topic, and explore collaboration opportunities.
-                        </p>
                     </div>
-                </div>
-            </a>
-        </div>
+                </a>
+            </div>
 
-        <!-- Apply -->
-        <div class="col-md-4">
-            <a href="{% url 'astrolink:application_create' %}?next={% url 'astrolink:forum_home' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 feature-card">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="bi bi-pencil-square fs-2 me-3 text-info"></i>
-                            <h5 class="card-title mb-0">Apply</h5>
+            <!-- Apply -->
+            <div class="col-md-4">
+                <a href="{% url 'astrolink:application_create' %}?next={% url 'astrolink:forum_home' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 feature-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-pencil-square fs-2 me-3 text-info"></i>
+                                <h5 class="card-title mb-0">Apply</h5>
+                            </div>
+                            <p class="card-text text-muted">
+                                Start an application for a project, case study, or submit a general proposal of your own.
+                            </p>
                         </div>
-                        <p class="card-text text-muted">
-                            Start an application for a project, case study, or submit a general proposal of your own.
-                        </p>
                     </div>
-                </div>
-            </a>
-        </div>
+                </a>
+            </div>
 
-        <!-- Case Studies -->
-        <div class="col-md-4">
-            <a href="{% url 'astrolink:casestudy_list' %}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 feature-card">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="bi bi-journal-bookmark-fill fs-2 me-3 text-warning"></i>
-                            <h5 class="card-title mb-0">Case Studies</h5>
+            <!-- Case Studies -->
+            <div class="col-md-4">
+                <a href="{% url 'astrolink:casestudy_list' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 feature-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-journal-bookmark-fill fs-2 me-3 text-warning"></i>
+                                <h5 class="card-title mb-0">Case Studies</h5>
+                            </div>
+                            <p class="card-text text-muted">
+                                Read detailed case studies documenting real-world applications and student experiences.
+                            </p>
                         </div>
-                        <p class="card-text text-muted">
-                            Read detailed case studies documenting real-world applications and student experiences.
-                        </p>
                     </div>
-                </div>
-            </a>
-        </div>
+                </a>
+            </div>
+        {% else %}
+                <!-- Projects -->
+            <div class="col-md-6">
+                <a href="{% url 'astrolink:project_list' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 feature-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-folder-fill fs-2 me-3 text-primary"></i>
+                                <h5 class="card-title mb-0">Projects</h5>
+                            </div>
+                            <p class="card-text text-muted">
+                                Browse available academic and industry projects, filter by topic, and explore collaboration opportunities.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Case Studies -->
+            <div class="col-md-6">
+                <a href="{% url 'astrolink:casestudy_list' %}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 feature-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-journal-bookmark-fill fs-2 me-3 text-warning"></i>
+                                <h5 class="card-title mb-0">Case Studies</h5>
+                            </div>
+                            <p class="card-text text-muted">
+                                Read detailed case studies documenting real-world applications and student experiences.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endif %}
 
     </div>
 

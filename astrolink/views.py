@@ -195,7 +195,12 @@ def generic_delete_view(request, instance, object_name, url_prefix):
 # Home
 # ----
 def forum_home(request):
-    return render(request, "forum/forum_homepage.html")
+    can_apply = has_permission(request.user, "create_application")
+    context = {
+        "page_title": "AstroLink",
+        "can_apply": can_apply,
+    }
+    return render(request, "forum/forum_homepage.html", context)
 
 # -----------------------------------------------
 # SUPERVISOR CRUD

@@ -29,6 +29,13 @@ AUTH_BREADCRUMBS = {
     ],
 }
 
+def user_can_access_list(user, model_name):
+    if model_name == "application":
+        return False
+
+    return True
+
+
 def dynamic_breadcrumbs(request):
     breadcrumbs = []
 
@@ -70,12 +77,20 @@ def dynamic_breadcrumbs(request):
             model_title = model.replace("_", " ").title()
             list_url_name = f"{app_name}:{model}_list"
 
+            print(model_title)
+
             # Add list breadcrumb
             try:
-                breadcrumbs.append({
-                    "title": f"{model_title}",
-                    "url": reverse(list_url_name)
-                })
+                if user_can_access_list(request.user, model):
+                    breadcrumbs.append({
+                        "title": model_title,
+                        "url": reverse(list_url_name)
+                    })
+                else:
+                    breadcrumbs.append({
+                        "title": model_title,
+                        "url": None
+                    })
             except:
                 breadcrumbs.append({
                     "title": f"Astrolink"
