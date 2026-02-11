@@ -17,8 +17,9 @@
                 </a>
             </p>
 
-            <a href="{% url 'astrolink:application_create' %}?project={{ project.pk }}" class="btn btn-primary">Apply for this Project</a>
-
+            {% if can_apply %}
+                <a href="{% url 'astrolink:application_create' %}?project={{ project.pk }}" class="btn btn-primary">Apply for this Project</a>
+            {% endif %}
 
             <div class="mt-3">
                 {% if project.time_estimate %}

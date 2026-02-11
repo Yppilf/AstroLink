@@ -320,9 +320,11 @@ def project_delete(request, pk):
     ownership_checker=owns_project)
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
+    can_apply = has_permission(request.user, "create_application")
 
     return render(request, "forum/project_detail.html", {
         "project": project,
+        "can_apply": can_apply,
         "page_title": project.title,
     })
 
@@ -526,9 +528,11 @@ def casestudy_delete(request, pk):
     ownership_checker=owns_case_study)
 def casestudy_detail(request, pk):
     case_study = get_object_or_404(CaseStudy, pk=pk)
+    can_apply = has_permission(request.user, "create_application")
 
     return render(request, "forum/casestudy_detail.html", {
         "case_study": case_study,
+        "can_apply": can_apply,
         "page_title": f"{case_study.title}",
     })
 

@@ -20,7 +20,9 @@
                 <strong>Time Estimate:</strong> {{ case_study.time_estimate }}
             </p>
 
-            <a href="{% url 'astrolink:application_create' %}?case_study={{ case_study.pk }}" class="btn btn-primary">Apply for this Case Study</a>
+            {% if can_apply %}
+                <a href="{% url 'astrolink:application_create' %}?case_study={{ case_study.pk }}" class="btn btn-primary">Apply for this Case Study</a>
+            {% endif %}
 
             <hr>
 
