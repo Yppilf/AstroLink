@@ -16,4 +16,6 @@ urlpatterns = [
     path("profile/", profile_views.my_profile, name="my_profile"),
     path("profile/edit", profile_views.edit_profile, name="edit_profile"),
     path("profile/<str:username>/", profile_views.profile_detail, name="profile_detail"),
+
+    path("delete-account/", views.delete_account, name="delete_account"),
 ]

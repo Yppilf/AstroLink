@@ -77,8 +77,6 @@ def dynamic_breadcrumbs(request):
             model_title = model.replace("_", " ").title()
             list_url_name = f"{app_name}:{model}_list"
 
-            print(model_title)
-
             # Add list breadcrumb
             try:
                 if user_can_access_list(request.user, model):

@@ -8,6 +8,54 @@
         </div>
     {% endfor %}
 </div>
+
+<!-- Hidden POST form -->
+<form id="delete-account-form" method="POST" action="{% url 'authentication:delete_account' %}">
+    {% csrf_token %}
+</form>
+
+<!-- Visible delete button -->
+<button id="delete-account-btn" class="btn btn-danger">
+    Delete My Account
+</button>
+
+<!-- SweetAlert with checkbox -->
+<script>
+document.getElementById("delete-account-btn").addEventListener("click", function() {
+    Swal.fire({
+        title: 'Are you sure?',
+        html: `
+            <p>This action is <strong>irreversible</strong>! All your data will be deleted immediately.</p>
+            <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input" id="confirm-checkbox">
+                <label class="form-check-label" for="confirm-checkbox">
+                    I understand that my account and all data will be permanently deleted.
+                </label>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete my account',
+        focusConfirm: false,
+        preConfirm: () => {
+            const checkbox = Swal.getPopup().querySelector('#confirm-checkbox');
+            if (!checkbox.checked) {
+                Swal.showValidationMessage('You must confirm that you understand the consequences.');
+                return false;
+            }
+            return true;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById("delete-account-form").submit();
+        }
+    });
+});
+</script>
+
+
 <hr class="my-4">
 {% endif %}
 

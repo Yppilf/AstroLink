@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .utils import assign_role
 from permissions.utils import external_user_permissions_required
+from django.contrib import messages
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -104,3 +105,11 @@ def admin_register_view(request):
     else:
         form = AdminSignUpForm()
     return render(request, 'forum/generic_form.html', {'form': form, 'list_url': reverse('astrolink:forum_home') })
+
+@login_required
+def delete_account(request):
+    if request.method == "POST":
+        request.user.delete()
+        messages.success(request, "Your account has been successfully deleted.")
+        return redirect("astrolink:forum_home")
+    return redirect("authentication:profile_detail", username=request.user.username)
