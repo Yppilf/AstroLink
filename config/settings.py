@@ -28,6 +28,9 @@ load_dotenv(env_path)
 SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
 is_production = os.getenv("DJANGO_ENV") == "production"
 
+BACKUP_ENCRYPTION_KEY  = os.environ.get("DJANGO_BACKUP_ENCRYPTION_KEY")
+BACKUP_ENCRYPTION_KEY  = BACKUP_ENCRYPTION_KEY.encode()
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not is_production
 

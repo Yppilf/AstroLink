@@ -115,6 +115,12 @@
                     <i class="bi bi-person-plus"></i> Admin Register
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'backup_page' %}"
+                href="{% url 'astrolink:backup_page' %}">
+                    <i class="bi bi-save"></i> Backups
+                </a>
+            </li>
             {% endif %}
 
         </ul>

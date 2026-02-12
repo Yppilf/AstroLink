@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import backup_views
 
 app_name = "astrolink"
 
@@ -64,4 +65,7 @@ urlpatterns = [
     path("applications/<int:pk>/status/", views.application_status_update, name="application_status_update"),
     path("applications/data/", views.application_list_data, name="application_list_data"),
 
+    path("backup/", backup_views.backup_page, name="backup_page"),
+    path("backup/export/", backup_views.export_encrypted_fixture_backup, name="export_backup"),
+    path("backup/import/", backup_views.import_encrypted_fixture_backup, name="import_backup"),
 ]
