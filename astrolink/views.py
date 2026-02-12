@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import (
-    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest
+    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag
 )
 from authentication.models import SupervisorProfile
 from .forms import (
     ProjectForm, CompanyForm, CaseStudyForm,
-    ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm
+    ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm, TagForm
 )
 from django.core.paginator import Paginator
 from django.db.models.fields.related import ForeignKey
@@ -141,7 +141,6 @@ def generic_list_data(
         "total": paginator.count,
         "has_actions": can_update or can_delete,
     })
-
 
 def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None, list_url=None):
     if not list_url:
@@ -809,3 +808,58 @@ def application_status_update(request, pk):
             form.save()
             messages.success(request, "Status updated successfully!")
     return redirect("astrolink:application_detail", pk=pk)
+
+# -----------------------------------------------
+# TAGS CRUD
+# -----------------------------------------------
+@external_user_permissions_required("create_tag", "read_tag")
+def tag_list(request):
+    can_create = has_permission(request.user, "create_tag")
+    can_view = False
+    can_update = has_permission(request.user, "update_tag")
+    can_delete = has_permission(request.user, "delete_tag")
+
+    return generic_list_view(
+        request,
+        Tag.objects.all(),
+        "Tag",
+        url_prefix="tag",
+        columns=["name", "slug"],
+        can_create=can_create,
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("create_tag", "read_tag")
+def tag_list_data(request):
+    can_update = has_permission(request.user, "update_tag")
+    can_delete = has_permission(request.user, "delete_tag")
+
+    return generic_list_data(
+        request,
+        Tag.objects.all(),
+        object_name="Tag",
+        url_prefix="tag",
+        columns=["name", "slug"],
+        can_view=False,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("create_tag", "update_tag", object_model=Tag)
+def tag_form(request, pk=None):
+    instance = Tag.objects.filter(pk=pk).first()
+
+    return generic_form_view(
+        request,
+        TagForm,
+        instance,
+        "Edit Tag" if instance else "Create Tag",
+        url_prefix="tag",
+    )
+
+@external_user_permissions_required("delete_tag", object_model=Tag)
+def tag_delete(request, pk):
+    instance = get_object_or_404(Tag, pk=pk)
+    return generic_delete_view(request, instance, "Tag", url_prefix="tag")

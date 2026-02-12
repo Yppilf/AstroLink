@@ -1,0 +1,35 @@
+<select name="{{ widget.name }}" id="{{ widget.attrs.id }}" class="{{ widget.attrs.class }}" multiple>
+    {% for group, options, index in widget.optgroups %}
+        {% for option in options %}
+            <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>
+                {{ option.label }}
+            </option>
+        {% endfor %}
+    {% endfor %}
+</select>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("{{ widget.attrs.id }}");
+    if (!select) return;
+
+    // Enable clicking without Ctrl and preserve scroll
+    select.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+        const option = e.target;
+        const scrollPos = select.scrollTop;  // store scroll
+
+        // Toggle selection
+        option.selected = !option.selected;
+
+        // Restore scroll after browser updates
+        setTimeout(() => {
+            select.scrollTop = scrollPos;
+        }, 0);
+    });
+
+    // Basic Bootstrap styling
+    select.classList.add("form-select", "form-select-multiple");
+});
+</script>
+

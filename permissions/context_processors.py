@@ -23,9 +23,16 @@ def global_permissions(request):
         has_permission(user, "create_association")
     )
 
+    can_manage_tags = (
+        has_permission(user, "create_tag") and 
+        has_permission(user, "update_tag") and 
+        has_permission(user, "delete_tag")
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
         "can_approve_supervisors": can_approve_supervisors,
         "can_admin_register": can_admin_register,
+        "can_manage_tags": can_manage_tags,
     }

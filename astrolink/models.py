@@ -1,6 +1,13 @@
 from django.db import models
 from authentication.models import User, SupervisorProfile, StudentProfile, AssociationProfile
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
 def supervisor_profile_picture_path(instance, filename):
     """Dynamically generates upload path for supervisor profile pictures"""
     return f"supervisors/{instance.id}/{filename}"
@@ -30,6 +37,7 @@ class Project(models.Model):
     time_estimate = models.CharField(max_length=16, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="projects")
 
     def __str__(self):
         return self.title
@@ -76,6 +84,7 @@ class CaseStudy(models.Model):
     revenue_split_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="case_studies")
 
     def __str__(self):
         return f"{self.title} ({self.company.name})"
@@ -117,3 +126,4 @@ class Application(models.Model):
     @property
     def is_general(self):
         return not self.project and not self.case_study
+    

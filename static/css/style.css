@@ -192,3 +192,18 @@ body {
 .feature-card:hover .bi {
     opacity: 0.9;
 }
+
+/* Select Multiple */
+.select2-selection__choice {
+    background-color: var(--primary);
+    border: none;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 4px;
+}
+
+.select2-selection__choice__remove {
+    color: white;
+    margin-right: 6px;
+}

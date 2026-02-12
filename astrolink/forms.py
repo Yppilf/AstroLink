@@ -1,7 +1,17 @@
 from django import forms
-from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company, Interest
+from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company, Interest, Tag
 from authentication.models import SupervisorProfile, AssociationProfile
 import re
+from django.utils.text import slugify
+
+class BootstrapMultiSelectPills(forms.SelectMultiple):
+    template_name = "widgets/bootstrap_multiselect_pills.html"
+
+    def __init__(self, attrs=None):
+        default_attrs = {"class": "form-select form-select-multiple"}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(attrs=default_attrs)
 
 # Helper email validator
 def validate_email(value):
@@ -61,9 +71,17 @@ class InterestForm(forms.ModelForm):
         return obj
 
 class ProjectForm(forms.ModelForm):
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        required=False,
+        widget=BootstrapMultiSelectPills(attrs={
+            "data-placeholder": "Select tags…"
+        })
+    )
+
     class Meta:
         model = Project
-        fields = ['title', 'description', 'time_estimate']
+        fields = ['title', 'description', 'time_estimate', 'tags']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }
@@ -74,13 +92,13 @@ class ProjectForm(forms.ModelForm):
 
     def save(self, commit=True):
         obj = super().save(commit=False)
-        # assign supervisor on creation
         if not obj.pk:
             if self.supervisor is None:
                 raise ValueError("Supervisor must be provided to save a new Project.")
             obj.supervisor = self.supervisor
         if commit:
             obj.save()
+            self.save_m2m()
         return obj
 
 class CompanyForm(forms.ModelForm):
@@ -124,12 +142,18 @@ class CompanyForm(forms.ModelForm):
 
         return obj
 
-
-
 class CaseStudyForm(forms.ModelForm):
     company = forms.ModelChoiceField(
         queryset=Company.objects.none(),
         label="Company",
+    )
+
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        required=False,
+        widget=BootstrapMultiSelectPills(attrs={
+            "data-placeholder": "Select tags…"
+        })
     )
 
     class Meta:
@@ -141,6 +165,7 @@ class CaseStudyForm(forms.ModelForm):
             "description",
             "revenue_split_notes",
             "time_estimate",
+            "tags"
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
@@ -161,7 +186,6 @@ class CaseStudyForm(forms.ModelForm):
         self.fields["company"].queryset = Company.objects.filter(
             association=association
         )
-
         self.fields["company"].label_from_instance = (
             lambda obj: f"{obj.name} — {obj.get_status_display()}"
         )
@@ -178,7 +202,6 @@ class CaseStudyForm(forms.ModelForm):
             )
 
         return company
-
 
 class ResearchGroupForm(forms.ModelForm):
     class Meta:
@@ -303,5 +326,27 @@ class ApplicationStatusForm(forms.ModelForm):
         model = Application
         fields = ["status"]
 
+class TagForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ["name"]  # slug is auto-managed
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
 
+        # Generate slug from name
+        base_slug = slugify(instance.name)
+        slug = base_slug
+        counter = 1
+
+        # Ensure uniqueness
+        while Tag.objects.filter(slug=slug).exclude(pk=instance.pk).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        instance.slug = slug
+
+        if commit:
+            instance.save()
+        return instance
+    

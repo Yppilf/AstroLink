@@ -65,6 +65,13 @@ urlpatterns = [
     path("applications/<int:pk>/status/", views.application_status_update, name="application_status_update"),
     path("applications/data/", views.application_list_data, name="application_list_data"),
 
+    # TAGS
+    path("tags/", views.tag_list, name="tag_list"),
+    path("tags/data/", views.tag_list_data, name="tag_list_data"),
+    path("tags/create/", views.tag_form, name="tag_create"),
+    path("tags/<int:pk>/edit/", views.tag_form, name="tag_update"),
+    path("tags/<int:pk>/delete/", views.tag_delete, name="tag_delete"),
+
     path("backup/", backup_views.backup_page, name="backup_page"),
     path("backup/export/", backup_views.export_encrypted_fixture_backup, name="export_backup"),
     path("backup/import/", backup_views.import_encrypted_fixture_backup, name="import_backup"),

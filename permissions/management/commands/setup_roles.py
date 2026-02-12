@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application
+from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application, Tag
 from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile
 
 class Command(BaseCommand):
@@ -45,6 +45,7 @@ class Command(BaseCommand):
             ('casestudy', CaseStudy, ["create", "read", "update", "delete"]),
             ('researchgroup', ResearchGroup, ["create", "read", "update", "delete"]),
             ('application', Application, ["create", "read", "update", "delete"]),
+            ('tag', Tag, ["create", "read", "update", "delete"]),
         ]
 
         for perm_label, model, actions in permissions:
@@ -76,6 +77,7 @@ class Command(BaseCommand):
                 'read_project',
                 'read_casestudy',
                 'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
+                'create_tag', 'read_tag', 'update_tag', 'delete_tag',
             ], 
             'Supervisor': [
                 'read_supervisor', 
@@ -86,6 +88,7 @@ class Command(BaseCommand):
                 'read_company',
                 'read_casestudy',
                 'read_researchgroup',
+                'read_tag',
             ],  
             'Association': [
                 'read_supervisor',
@@ -98,8 +101,8 @@ class Command(BaseCommand):
                 'create_company2', 
                 'create_casestudy', 'read_casestudy',
                 'read_researchgroup',
-
                 'create_researchgroup', 'update_researchgroup', 'delete_researchgroup',
+                'read_tag',
             ],  
             'Own Data': [ 
                 'read_user',
@@ -132,7 +135,7 @@ class Command(BaseCommand):
                 'read_casestudy',
                 'read_researchgroup',
                 'create_application', 
-
+                'read_tag',
                 'create_interest', 'update_interest', 'delete_interest',
             ],
             'External User': [
