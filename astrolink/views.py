@@ -19,6 +19,9 @@ from django.db.models.functions import Coalesce
 import json
 from django.views.decorators.csrf import csrf_exempt
 from .templatetags.render_markdown import render_markdown_safe
+from datetime import datetime
+from .dynamic_email import send_dynamic_email
+from .utils import get_full_url
 
 
 # A helper that avoids repeating template logic:
@@ -749,10 +752,51 @@ def application_list_data(request):
         can_delete=can_delete,
     )
 
+def send_application_emails(application):
+    """
+    Sends notification emails when a new project application is submitted.
+    Notifies both the supervisor and, if applicable, the PhD supervisor.
+    """
+    applicant = application.member
+    project = application.project
+    supervisor = project.supervisor
+    academic_supervisor = supervisor.academic_supervisor  # May be None
+
+    application_url = get_full_url(reverse("astrolink:application_detail", args=[application.pk]))
+
+    # --- Email to project supervisor (with button)
+    TEMPLATE_SUPERVISOR = 8
+    send_dynamic_email(
+        supervisor.user.email,
+        TEMPLATE_SUPERVISOR,
+        {
+            "recipient_name": supervisor.user.display_name(),
+            "applicant_name": applicant.display_name(),
+            "project_title": project.title,
+            "application_url": application_url,
+            "year": datetime.now().year,
+        }
+    )
+
+    # --- Email to academic supervisor (without button)
+    if academic_supervisor:
+        TEMPLATE_ACADEMIC = 9
+        send_dynamic_email(
+            academic_supervisor.user.email,
+            TEMPLATE_ACADEMIC,
+            {
+                "recipient_name": academic_supervisor.user.display_name(),
+                "phd_student_name": supervisor.user.display_name(),
+                "project_title": project.title,
+                "year": datetime.now().year,
+            }
+        )
+
 @external_user_permissions_required("create_application",object_model=Application,
     ownership_checker=owns_application)
 def application_form(request, pk=None):
     instance = Application.objects.filter(pk=pk).first()
+    is_new = instance is None  # Track if this is a new application
 
     if instance is None:
         project_id = request.GET.get("project")
@@ -765,7 +809,8 @@ def application_form(request, pk=None):
         if cs_id:
             instance.case_study_id = cs_id
 
-    return generic_form_view(
+    # Wrap the generic_form_view so we can detect when save happens
+    response = generic_form_view(
         request,
         ApplicationForm,
         instance,
@@ -773,8 +818,17 @@ def application_form(request, pk=None):
         url_prefix="application",
         form_kwargs={"request": request},
         success_message="Your application was submitted successfully!",
-        list_url = reverse("astrolink:forum_home"),
+        list_url=reverse("astrolink:forum_home"),
     )
+
+    # Only send emails if this is a POST creating a new application
+    if request.method == "POST" and is_new and instance.pk:
+        send_application_emails(instance)
+
+    return response
+
+
+
 
 @external_user_permissions_required("delete_application",object_model=Application,
     ownership_checker=owns_application)

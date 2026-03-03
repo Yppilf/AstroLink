@@ -1,5 +1,15 @@
 from .models import Application
 from django.db.models import Q
+from django.conf import settings
+from django.urls import reverse
+
+def get_full_url(path):
+    """
+    Converts a relative path to a full absolute URL using SITE_URL.
+    Fallback: use request.get_host() if needed.
+    """
+    site_url = getattr(settings, "SITE_URL", "https://siriusa.nl")  # your main domain
+    return f"{site_url.rstrip('/')}{path}"
 
 def get_applications_for_user(user):
     role = user.role.name if user.role else None

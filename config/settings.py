@@ -35,7 +35,7 @@ BACKUP_ENCRYPTION_KEY  = BACKUP_ENCRYPTION_KEY.encode()
 DEBUG = not is_production
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.siriusa.nl', 'siriusa.nl']
-
+SITE_URL = "https://astrolink.siriusa.nl"
 
 # Application definition
 
