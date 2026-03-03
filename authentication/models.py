@@ -129,6 +129,11 @@ class SupervisorProfile(BaseProfile):
     pnumber = models.CharField(max_length=64, null=True, blank=True)
     profile_picture = models.ImageField(upload_to=supervisor_profile_picture_path,null=True,blank=True)
 
+    academic_supervisor = models.ForeignKey("self",null=True,blank=True,on_delete=models.SET_NULL,related_name="phd_students")
+
+    def is_phd_student(self):
+        return self.academic_supervisor is not None
+
 class StudentProfile(BaseProfile):
     biography = models.TextField(blank=True)
     snumber = models.CharField(max_length=64, null=True, blank=True)

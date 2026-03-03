@@ -101,7 +101,37 @@ class UserProfileForm(forms.ModelForm):
 class SupervisorProfileForm(forms.ModelForm):
     class Meta:
         model = SupervisorProfile
-        fields = ["biography", "pnumber", "profile_picture"]
+        fields = ["biography", "pnumber", "profile_picture", "academic_supervisor"]
+        help_texts = {
+            "academic_supervisor": (
+                "If you are a PhD student, select your academic supervisor. "
+                "Leave empty if you are an independent supervisor."
+            )
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance.pk:
+            self.fields["academic_supervisor"].queryset = (
+                SupervisorProfile.objects
+                .exclude(pk=self.instance.pk)
+                .select_related("user")
+                .order_by("user__screen_name", "user__legal_name")
+            )
+
+    def clean_academic_supervisor(self):
+        supervisor = self.cleaned_data.get("academic_supervisor")
+
+        if supervisor is None:
+            return None
+
+        if supervisor.is_phd_student():
+            raise forms.ValidationError(
+                "You cannot select a PhD student as your academic supervisor."
+            )
+
+        return supervisor
 
 
 class StudentProfileForm(forms.ModelForm):
