@@ -75,4 +75,6 @@ urlpatterns = [
     path("backup/", backup_views.backup_page, name="backup_page"),
     path("backup/export/", backup_views.export_encrypted_fixture_backup, name="export_backup"),
     path("backup/import/", backup_views.import_encrypted_fixture_backup, name="import_backup"),
+
+    path("render-preview/", views.render_preview, name="render_preview"),
 ]

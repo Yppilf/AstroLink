@@ -1,4 +1,5 @@
 {% extends "forum/base.html" %}
+{% load render_markdown %}
 
 {% block content %}
 <div class="container">
@@ -27,7 +28,9 @@
             <hr>
 
             <h5>Description</h5>
-            <p>{{ case_study.description|linebreaks }}</p>
+            <div class="markdown-content">
+                {{ case_study.description|render|safe }}
+            </div>
 
             {% if case_study.revenue_split_notes %}
                 <hr>

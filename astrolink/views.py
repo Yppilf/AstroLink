@@ -13,9 +13,13 @@ from django.db.models.fields.related import ForeignKey
 from django.contrib import messages
 from permissions.utils import external_user_permissions_required, has_permission, owns_application, owns_case_study, owns_project, owns_company, owns_application_nonstudent
 from django.template.loader import render_to_string
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.db.models import Q, F
 from django.db.models.functions import Coalesce
+import json
+from django.views.decorators.csrf import csrf_exempt
+from .templatetags.render_markdown import render_markdown_safe
+
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -872,3 +876,13 @@ def tag_form(request, pk=None):
 def tag_delete(request, pk):
     instance = get_object_or_404(Tag, pk=pk)
     return generic_delete_view(request, instance, "Tag", url_prefix="tag")
+
+@csrf_exempt
+def render_preview(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        text = data.get("text", "")
+        html = render_markdown_safe(text)
+        return HttpResponse(html)
+
+    return HttpResponse("")

@@ -1,5 +1,6 @@
 from django import forms
 from .models import Project, CaseStudy, ResearchGroup, Reference, Application, Company, Interest, Tag
+from .widgets import RichTextWidget
 from authentication.models import SupervisorProfile, AssociationProfile
 import re
 from django.utils.text import slugify
@@ -83,7 +84,7 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = ['title', 'description', 'time_estimate', 'tags']
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
+            'description': RichTextWidget(),
         }
 
     def __init__(self, *args, supervisor=None, **kwargs):
@@ -168,7 +169,7 @@ class CaseStudyForm(forms.ModelForm):
             "tags"
         ]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
+            "description": RichTextWidget(),
             "revenue_split_notes": forms.Textarea(attrs={"rows": 3}),
             "logo": forms.FileInput(),
         }
