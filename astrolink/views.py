@@ -494,13 +494,22 @@ def casestudy_list_data(request):
     ownership_checker=owns_case_study,
 )
 def casestudy_create_form(request, pk=None):
+    initial = {}
+
+    company_id = request.GET.get("company")
+    if company_id:
+        initial["company"] = company_id
+
     return generic_form_view(
         request,
         CaseStudyForm,
         None,
         "Create Case Study",
         url_prefix="casestudy",
-        form_kwargs={"request": request},
+        form_kwargs={
+            "request": request,
+            "initial": initial,
+        },
     )
 
 
