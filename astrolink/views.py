@@ -86,23 +86,32 @@ def generic_list_data(
 
     # --- Filtering ---
     if search and columns:
-        q_objects = Q()
-        for col in columns:
-            # Use annotated FK names if present
-            ann_col = f"{col}_name" if f"{col}_name" in queryset.query.annotations else col
-            if ann_col in queryset.query.annotations:
-                q_objects |= Q(**{f"{ann_col}__icontains": search})
-            else:
-                try:
-                    field = model._meta.get_field(col)
-                    if field.is_relation:
-                        # Generic FK search on str(): fallback to nothing
+        words = search.split()
+
+        for word in words:
+            word_q = Q()
+
+            for col in columns:
+                ann_col = f"{col}_name" if f"{col}_name" in queryset.query.annotations else col
+
+                if ann_col in queryset.query.annotations:
+                    word_q |= Q(**{f"{ann_col}__icontains": word})
+                else:
+                    try:
+                        field = model._meta.get_field(col)
+                        if not field.is_relation:
+                            word_q |= Q(**{f"{col}__icontains": word})
+                    except Exception:
                         pass
-                    else:
-                        q_objects |= Q(**{f"{col}__icontains": search})
-                except Exception:
-                    pass
-        queryset = queryset.filter(q_objects)
+
+            # Include tag search if model has tags
+            if hasattr(model, "tags"):
+                word_q |= Q(tags__name__icontains=word)
+
+            # AND each word condition
+            queryset = queryset.filter(word_q)
+
+        queryset = queryset.distinct()
 
     # --- Sorting ---
     if sort and columns and sort in columns:
