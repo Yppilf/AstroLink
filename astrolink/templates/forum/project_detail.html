@@ -16,6 +16,16 @@
                 <a href="{% url 'astrolink:supervisor_detail' project.supervisor.pk %}">
                     {{ project.supervisor.name }}
                 </a>
+
+                {% if project.supervisor.is_phd_student %}
+                    <br>
+                    <small>
+                        PhD student under
+                        <a href="{% url 'astrolink:supervisor_detail' project.supervisor.academic_supervisor.pk %}">
+                            {{ project.supervisor.academic_supervisor.name }}
+                        </a>
+                    </small>
+                {% endif %}
             </p>
 
             {% if can_apply %}

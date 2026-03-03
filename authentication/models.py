@@ -133,6 +133,14 @@ class SupervisorProfile(BaseProfile):
 
     def is_phd_student(self):
         return self.academic_supervisor is not None
+    
+    def __str__(self):
+        base_name = super().__str__()
+
+        if self.is_phd_student() and self.academic_supervisor:
+            return f"{base_name} (PhD student under {self.academic_supervisor.name})"
+
+        return base_name
 
 class StudentProfile(BaseProfile):
     biography = models.TextField(blank=True)
