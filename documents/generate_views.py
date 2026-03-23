@@ -15,6 +15,8 @@ from django.core.files import File
 from .models import DocumentTemplate, GeneratedDocument, DocumentSigner
 from .forms import build_dynamic_form
 
+from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
+
 def generate_pdf(template, context_data, output_folder="generated", use_temp=True):
     base_dir = os.path.join(settings.MEDIA_ROOT, "generated_documents")
 
@@ -116,6 +118,7 @@ def cleanup_temp_previews(folder="temp", max_age=300):
         if now - timestamp > max_age:
             os.remove(path)
 
+@external_user_permissions_required('create_generateddocument', 'create_documentsigner')
 def generate_document(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
     DynamicForm = build_dynamic_form(template)
@@ -168,6 +171,7 @@ def generate_document(request, template_id):
     })
 
 @require_POST
+@external_user_permissions_required('create_generateddocument')
 def generate_preview(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
     DynamicForm = build_dynamic_form(template)
@@ -201,11 +205,16 @@ def generate_preview(request, template_id):
         "error": form.errors
     }, status=400)
 
-def generated_document_view(request, doc_id):
+@external_user_permissions_required(
+    "read_generateddocument",
+    object_model=GeneratedDocument,
+    ownership_checker=owns_generated_document
+)
+def generated_document_view(request, pk):
     """
     Serve the PDF file for a generated document in a new tab.
     """
-    doc = get_object_or_404(GeneratedDocument, id=doc_id)
+    doc = get_object_or_404(GeneratedDocument, id=pk)
 
     if not doc.pdf_file:
         raise Http404("PDF file not found.")

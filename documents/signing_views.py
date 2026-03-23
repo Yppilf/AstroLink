@@ -7,6 +7,7 @@ import hashlib, hmac, os, secrets
 from .generate_views import generate_pdf
 from django.utils import timezone
 from django.core.files import File
+from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
 
 CONTRACT_AUTHENTICITY_KEY = settings.CONTRACT_AUTHENTICITY_KEY
 
@@ -59,14 +60,19 @@ def generate_signature_salt():
 def compute_short_signature(signature: str):
     return signature[:12]
 
-def sign_generated_document(request, doc_id, field_id):
+@external_user_permissions_required(
+    "update_documentsigner",
+    object_model=GeneratedDocument,
+    ownership_checker=owns_generated_document
+)
+def sign_generated_document(request, pk, field_id):
     """
     Signs a field in a generated document:
       - Creates attestation
       - Updates context_data with signature blob
       - Regenerates PDF
     """
-    doc = get_object_or_404(GeneratedDocument, id=doc_id)
+    doc = get_object_or_404(GeneratedDocument, id=pk)
 
     signer = get_object_or_404(
         DocumentSigner,
@@ -82,7 +88,7 @@ def sign_generated_document(request, doc_id, field_id):
 
     # --- Payload stored in Attestation ---
     payload = {
-        "name": request.user.username,
+        "name": f"{request.user.legal_name}",
         "signed_at": signed_at.isoformat(),
         "document_id": str(doc.id),
         "field_name": signer.field.name,
@@ -142,4 +148,4 @@ def sign_generated_document(request, doc_id, field_id):
     # Optionally update overall signed status
     doc.update_signed_status()
 
-    return redirect("documents:generated_document_view", doc_id=doc.id)
+    return redirect("documents:generated_document_view", pk=doc.id)

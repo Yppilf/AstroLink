@@ -4,7 +4,9 @@ from django.http import JsonResponse, HttpResponse, Http404, FileResponse
 from astrolink.views import generic_list_view, generic_list_data, generic_form_view, generic_delete_view
 from .models import DocumentTemplate, TemplateField, TemplateAsset
 from .forms import DocumentTemplateForm, TemplateFieldForm, TemplateAssetForm
+from permissions.utils import external_user_permissions_required, has_permission
 
+@external_user_permissions_required('read_documenttemplate')
 def template_list(request):
     queryset = DocumentTemplate.objects.all()
 
@@ -17,6 +19,7 @@ def template_list(request):
         namespace="documents",
     )
 
+@external_user_permissions_required('read_documenttemplate')
 def template_list_data(request):
     queryset = DocumentTemplate.objects.all()
 
@@ -29,6 +32,7 @@ def template_list_data(request):
         namespace="documents",
     )
 
+@external_user_permissions_required('create_documenttemplate')
 def template_create(request):
     return generic_form_view(
         request,
@@ -40,6 +44,7 @@ def template_create(request):
         namespace="documents",
     )
 
+@external_user_permissions_required('read_documenttemplate', 'update_documenttemplate')
 def template_update(request, pk):
     instance = get_object_or_404(DocumentTemplate, pk=pk)
 
@@ -53,6 +58,7 @@ def template_update(request, pk):
         namespace="documents",
     )
 
+@external_user_permissions_required('delete_documenttemplate')
 def template_delete(request, pk):
     instance = get_object_or_404(DocumentTemplate, pk=pk)
 
@@ -64,6 +70,7 @@ def template_delete(request, pk):
         namespace="documents",
     )
 
+@external_user_permissions_required('read_documenttemplate', 'read_templatefield', 'read_templateasset')
 def template_detail(request, pk):
     template = get_object_or_404(DocumentTemplate, pk=pk)
 
@@ -76,6 +83,7 @@ def template_detail(request, pk):
     })
 
 @require_POST
+@external_user_permissions_required('create_templatefield')
 def add_field(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
 
@@ -102,12 +110,14 @@ def add_field(request, template_id):
     }, status=400)
 
 @require_POST
+@external_user_permissions_required('delete_templatefield')
 def delete_field(request, field_id):
     field = get_object_or_404(TemplateField, pk=field_id)
     field.delete()
     return JsonResponse({"success": True})
 
 @require_POST
+@external_user_permissions_required('create_templateasset')
 def add_asset(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
 
@@ -128,6 +138,7 @@ def add_asset(request, template_id):
     return JsonResponse({"success": False, "errors": form.errors}, status=400)
 
 @require_POST
+@external_user_permissions_required('delete_templateasset')
 def delete_asset(request, asset_id):
     asset = get_object_or_404(TemplateAsset, pk=asset_id)
     asset.delete()

@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application, Tag
 from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile
+from documents.models import DocumentTemplate, TemplateField, TemplateAsset, GeneratedDocument, DocumentSigner
 
 class Command(BaseCommand):
     help = 'Set up roles and permissions'
@@ -11,6 +12,7 @@ class Command(BaseCommand):
         # Define roles
         permission_map = {}
         roles = ['System Admin', 
+                 'Programme Coordinator'
                  'Supervisor',
                  'Association',
                  'Own Data', 
@@ -46,6 +48,12 @@ class Command(BaseCommand):
             ('researchgroup', ResearchGroup, ["create", "read", "update", "delete"]),
             ('application', Application, ["create", "read", "update", "delete"]),
             ('tag', Tag, ["create", "read", "update", "delete"]),
+
+            ('documenttemplate', DocumentTemplate, ["create", "read", "update", "delete"]),
+            ('templatefield', TemplateField, ["create", "read", "update", "delete"]),
+            ('templateasset', TemplateAsset, ["create", "read", "update", "delete"]),
+            ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),
+            ('documentsigner', DocumentSigner, ["create", "read", "update", "delete"]),
         ]
 
         for perm_label, model, actions in permissions:
@@ -78,7 +86,22 @@ class Command(BaseCommand):
                 'read_casestudy',
                 'create_researchgroup', 'read_researchgroup', 'update_researchgroup', 'delete_researchgroup',
                 'create_tag', 'read_tag', 'update_tag', 'delete_tag',
+
+                'create_documenttemplate', 'read_documenttemplate', 'update_documenttemplate', 'delete_documenttemplate',
+                'create_templatefield', 'read_templatefield', 'update_templatefield', 'delete_templatefield',
+                'create_templateasset', 'read_templateasset', 'update_templateasset', 'delete_templateasset',
             ], 
+            # 'Programme Coordinator': [
+            #     'read_supervisor', 
+            #     'read_student',
+            #     'read_association',
+            #     'create_reference', 'read_reference', 'update_reference',  
+            #     'create_project', 'read_project', 'update_project',
+            #     'read_company',
+            #     'read_casestudy',
+            #     'read_researchgroup',
+            #     'read_tag',
+            # ],
             'Supervisor': [
                 'read_supervisor', 
                 'read_student',
@@ -89,6 +112,9 @@ class Command(BaseCommand):
                 'read_casestudy',
                 'read_researchgroup',
                 'read_tag',
+
+                'create_generateddocument',
+                'create_documentsigner',
             ],  
             'Association': [
                 'read_supervisor',
@@ -103,9 +129,14 @@ class Command(BaseCommand):
                 'read_researchgroup',
                 'create_researchgroup', 'update_researchgroup', 'delete_researchgroup',
                 'read_tag',
+
+                'create_generateddocument',
+                'create_documentsigner',
             ],  
             'Own Data': [ 
                 'read_user',
+                'read_generateddocument',
+                'update_documentsigner',
                 
                 # For Students
                 'read_student', 'update_student',

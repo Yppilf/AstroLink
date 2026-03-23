@@ -139,6 +139,14 @@
             </li>
             {% endif %}
 
+            {% if can_manage_documents %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'template_list' 'template_create' 'template_update' %}"
+                href="{% url 'documents:template_list' %}">
+                    <i class="bi bi-file"></i> Documents
+                </a>
+            </li>
+            {% endif %}
 
         </ul>
 

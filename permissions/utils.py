@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponseForbidden
 from authentication.models import User
 from astrolink.models import Application
+from documents.models import GeneratedDocument, DocumentSigner
 
 logger = logging.getLogger('core.permissions')
 
@@ -94,6 +95,11 @@ def owns_company(user, company):
         company.association
         and company.association.user_id == user.id
     )
+
+def owns_generated_document(user, document: GeneratedDocument):
+    if not user.is_authenticated:
+        return False
+    return document.signers.filter(user=user).exists()
 
 
 def has_permission(

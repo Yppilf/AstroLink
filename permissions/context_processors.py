@@ -29,10 +29,15 @@ def global_permissions(request):
         has_permission(user, "delete_tag")
     )
 
+    can_manage_documents = (
+        has_permission(user, "create_documenttemplate") 
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
         "can_approve_supervisors": can_approve_supervisors,
         "can_admin_register": can_admin_register,
         "can_manage_tags": can_manage_tags,
+        "can_manage_documents": can_manage_documents,
     }
