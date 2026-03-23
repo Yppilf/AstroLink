@@ -35,8 +35,9 @@ def generic_list_view(
     can_view=True,
     can_update=True,
     can_delete=True,
+    namespace="astrolink",
 ):
-    create_url = reverse(f"astrolink:{url_prefix}_create") if can_create else None
+    create_url = reverse(f"{namespace}:{url_prefix}_create") if can_create else None
 
     return render(request, "forum/generic_list.html", {
         "columns": columns,
@@ -45,7 +46,7 @@ def generic_list_view(
         "page_title": f"{object_name} List",
         "can_create": can_create,
         "has_actions": can_update or can_delete,
-        "data_url": reverse(f"astrolink:{url_prefix}_list_data"),
+        "data_url": reverse(f"{namespace}:{url_prefix}_list_data"),
     })
 
 def generic_list_data(
@@ -57,6 +58,7 @@ def generic_list_data(
     can_view=True,
     can_update=True,
     can_delete=True,
+    namespace="astrolink",
 ):
     search = request.GET.get("search", "").strip()
     page = int(request.GET.get("page", 1))
@@ -144,9 +146,9 @@ def generic_list_data(
 
         row = {
             "values": values,
-            "detail_url": reverse(f"astrolink:{url_prefix}_detail", args=[obj.pk]) if can_view else None,
-            "update_url": reverse(f"astrolink:{url_prefix}_update", args=[obj.pk]) if can_update else None,
-            "delete_url": reverse(f"astrolink:{url_prefix}_delete", args=[obj.pk]) if can_delete else None,
+            "detail_url": reverse(f"{namespace}:{url_prefix}_detail", args=[obj.pk]) if can_view else None,
+            "update_url": reverse(f"{namespace}:{url_prefix}_update", args=[obj.pk]) if can_update else None,
+            "delete_url": reverse(f"{namespace}:{url_prefix}_delete", args=[obj.pk]) if can_delete else None,
         }
         rows.append(row)
 
@@ -158,9 +160,9 @@ def generic_list_data(
         "has_actions": can_update or can_delete,
     })
 
-def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None, list_url=None):
+def generic_form_view(request, form_class, instance, form_title, url_prefix, form_kwargs=None, success_message=None, list_url=None, namespace="astrolink"):
     if not list_url:
-        list_url = reverse(f"astrolink:{url_prefix}_list")
+        list_url = reverse(f"{namespace}:{url_prefix}_list")
     next_url = request.POST.get("next") or request.GET.get("next")
 
     if request.method == "POST":
@@ -193,8 +195,8 @@ def generic_form_view(request, form_class, instance, form_title, url_prefix, for
     }
     return render(request, "forum/generic_form.html", context)
 
-def generic_delete_view(request, instance, object_name, url_prefix):
-    list_url = reverse(f"astrolink:{url_prefix}_list")
+def generic_delete_view(request, instance, object_name, url_prefix, namespace="astrolink"):
+    list_url = reverse(f"{namespace}:{url_prefix}_list")
     if request.method == "POST":
         instance.delete()
         return redirect(list_url)

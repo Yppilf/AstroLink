@@ -1,0 +1,304 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Top Section -->
+    <div class="row mb-4 p-3 bg-light rounded shadow-sm">
+
+        <!-- LEFT -->
+        <div class="col-md-8">
+            <h2>{{ template.name }}</h2>
+
+            <p class="text-muted">
+                {{ template.description }}
+            </p>
+
+            <hr>
+
+            <p>
+                <strong>LaTeX file:</strong>
+                <a href="{{ template.latex_file.url }}" target="_blank">Download</a>
+            </p>
+
+            <p>
+                <strong>Name template:</strong> {{ template.name_template|default:"-" }}
+            </p>
+
+            <a href="{% url 'documents:template_update' template.pk %}" class="btn btn-primary btn-sm">
+                Edit Template
+            </a>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="col-md-4 text-center">
+            <p class="text-muted mt-3">
+                <small>
+                    Created: {{ template.created_at|date:"Y-m-d" }}
+                </small>
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- Fields Section -->
+    <!-- ========================= -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Fields</h5>
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addFieldModal">
+                + Add Field
+            </button>
+        </div>
+
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Label</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="fields-table">
+                    {% for field in fields %}
+                    <tr data-id="{{ field.id }}">
+                        <td>{{ field.name }}</td>
+                        <td>{{ field.label }}</td>
+                        <td>{{ field.field_type }}</td>
+                        <td>{{ field.required }}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm delete-field">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No fields yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- Assets Section -->
+    <!-- ========================= -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Assets</h5>
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+                + Add Asset
+            </button>
+        </div>
+
+        <div class="card-body">
+            <ul class="list-group" id="assets-list">
+                {% for asset in assets %}
+                <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ asset.id }}">
+                    {{ asset.name }}
+                    <button class="btn btn-danger btn-sm delete-asset">Delete</button>
+                </li>
+                {% empty %}
+                <li class="list-group-item">No assets yet</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Add Field Modal -->
+<!-- ========================= -->
+<div class="modal fade" id="addFieldModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="add-field-form">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Add Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form_field.name.label_tag }}
+                    {{ form_field.name }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form_field.label.label_tag }}
+                    {{ form_field.label }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form_field.field_type.label_tag }}
+                    {{ form_field.field_type }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form_field.required.label_tag }}
+                    {{ form_field.required }}
+                </div>
+
+                <div class="mb-3" id="choices-field">
+                    {{ form_field.choices_text.label_tag }}
+                    {{ form_field.choices_text }}
+                </div>
+
+                <div class="mb-3" id="roles-field">
+                    {{ form_field.allowed_roles.label_tag }}
+                    {{ form_field.allowed_roles }}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================= -->
+<!-- Add Asset Modal -->
+<!-- ========================= -->
+<div class="modal fade" id="addAssetModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="add-asset-form" enctype="multipart/form-data">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Add Asset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                {% csrf_token %}
+                {{ form_asset.as_p }}
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const addFieldUrl = "{% url 'documents:add_field' template.id %}";
+const addAssetUrl = "{% url 'documents:add_asset' template.id %}";
+const deleteFieldBase = "/documents/templates/fields/";
+const deleteAssetBase = "/documents/templates/assets/";
+</script>
+
+<script>
+const templateId = {{ template.id }};
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// =======================
+// Add Field
+// =======================
+const fieldTypeSelect = document.getElementById("id_field_type");
+const choicesField = document.getElementById("choices-field");
+const rolesField = document.getElementById("roles-field");
+
+function toggleFields() {
+    const type = fieldTypeSelect.value;
+
+    choicesField.style.display = (type === "choice") ? "block" : "none";
+    rolesField.style.display = (type === "signature") ? "block" : "none";
+}
+
+fieldTypeSelect.addEventListener("change", toggleFields);
+
+// run on load
+toggleFields();
+
+document.getElementById("add-field-form").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch(addFieldUrl, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            console.log("Form errors:", data.errors);
+            alert("Error: " + JSON.stringify(data.errors));
+        }
+    })
+});
+
+// =======================
+// Delete Field
+// =======================
+document.querySelectorAll(".delete-field").forEach(btn => {
+    btn.addEventListener("click", function(){
+        let row = this.closest("tr");
+        let id = row.dataset.id;
+
+        fetch(`${deleteFieldBase}${id}/delete/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        }).then(() => row.remove());
+    });
+});
+
+// =======================
+// Add Asset
+// =======================
+document.getElementById("add-asset-form").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch(addAssetUrl, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            location.reload();
+        }
+    });
+});
+
+// =======================
+// Delete Asset
+// =======================
+document.querySelectorAll(".delete-asset").forEach(btn => {
+    btn.addEventListener("click", function(){
+        let li = this.closest("li");
+        let id = li.dataset.id;
+
+        fetch(`${deleteAssetBase}${id}/delete/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        }).then(() => li.remove());
+    });
+});
+</script>
+
+{% endblock %}

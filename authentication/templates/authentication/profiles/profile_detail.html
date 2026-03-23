@@ -50,6 +50,11 @@
             <a class="nav-link {% if active_tab == 'applications' %}active{% endif %}"
             href="?tab=applications">My Applications</a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'contracts' %}active{% endif %}"
+            href="?tab=contracts">My Contracts</a>
+        </li>
         {% endif %}
 
         <li class="nav-item">
@@ -69,6 +74,9 @@
 
             {% elif active_tab == 'applications' %}
                 {% include "authentication/profiles/tabs/applications.html" %}
+
+            {% elif active_tab == 'contracts' %}
+                {% include "authentication/profiles/tabs/contracts.html" %}
 
             {% elif active_tab == 'data' %}
                 {% include "authentication/profiles/tabs/profile_data.html" %}

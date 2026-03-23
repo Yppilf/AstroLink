@@ -26,6 +26,7 @@ load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
+CONTRACT_AUTHENTICITY_KEY = os.getenv("CONTRACT_AUTHENTICITY_KEY")
 is_production = os.getenv("DJANGO_ENV") == "production"
 
 BACKUP_ENCRYPTION_KEY  = os.environ.get("DJANGO_BACKUP_ENCRYPTION_KEY")
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'astrolink',
     'permissions',
     'authentication',
+    'documents',
 ]
 
 MIDDLEWARE = [
@@ -189,3 +191,5 @@ LOGGING = {
         },
     },
 }
+
+X_FRAME_OPTIONS = "SAMEORIGIN"

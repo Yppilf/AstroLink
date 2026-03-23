@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from .models import User, Role
+from documents.models import GeneratedDocument
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -44,11 +45,17 @@ def profile_detail(request, username):
     if profile and registry_entry and "extra_context_fn" in registry_entry:
         extra_context = registry_entry["extra_context_fn"](profile)
 
+    is_self = request.user.is_authenticated and request.user == profile_user
+
     applications = None
-    if request.GET.get("tab") == "applications":
+    if request.GET.get("tab") == "applications"  and is_self:
         applications = get_applications_for_user(profile_user)
 
-    is_self = request.user.is_authenticated and request.user == profile_user
+    contracts = None
+    if request.GET.get("tab") == "contracts" and is_self:
+        contracts = GeneratedDocument.objects.filter(
+            signers__user=profile_user
+        ).distinct().order_by("-created_at")
 
     return render(request, "authentication/profiles/profile_detail.html", {
         "profile_user": profile_user,
@@ -58,6 +65,7 @@ def profile_detail(request, username):
         "user_fields": user_fields,
         "profile_fields": profile_fields,
         "applications": applications,
+        "contracts": contracts,
         "is_self": is_self,
         **extra_context
     })
