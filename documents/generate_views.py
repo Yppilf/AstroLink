@@ -307,8 +307,6 @@ def generate_preview(request, template_id):
             use_temp=True
         )
 
-        print("PDF PATH:", pdf_path)
-
         # Build URL to preview view
         query_string = urlencode({"path": pdf_path})
         pdf_url = f"{reverse('documents:preview_pdf')}?{query_string}"
@@ -327,8 +325,6 @@ def preview_pdf(request):
 
     if not file_path:
         raise Http404("No file specified.")
-    
-    print("RAW PATH:", file_path)
 
     file_path = file_path.split("?")[0]
 
