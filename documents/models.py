@@ -3,6 +3,7 @@ from authentication.models import User, Role
 import uuid, hashlib, hmac, json, os
 from django.utils import timezone
 from django.core.files import File
+from astrolink.models import Application
 
 def template_upload_path(instance, filename):
     return f"documents/templates/{instance.name}/{filename}"
@@ -17,6 +18,8 @@ class DocumentTemplate(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL)
+
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -76,6 +79,8 @@ class GeneratedDocument(models.Model):
 
     is_locked = models.BooleanField(default=False)
     last_edited_at = models.DateTimeField(null=True, blank=True)
+
+    application = models.ForeignKey(Application,null=True,blank=True,on_delete=models.SET_NULL,related_name="documents")
 
     @property
     def all_signers_assigned(self):

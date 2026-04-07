@@ -23,6 +23,7 @@ from datetime import datetime
 from .dynamic_email import send_dynamic_email
 from .utils import get_full_url
 from django.utils import timezone
+from documents.models import DocumentTemplate, GeneratedDocument
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -863,6 +864,8 @@ def application_detail(request, pk):
             case_study=application.case_study
         ).exclude(pk=application.pk)
 
+    templates = DocumentTemplate.objects.filter(is_active=True).all()
+
     return render(request, "forum/application_detail.html", {
         "application": application,
         "target": target,
@@ -870,6 +873,8 @@ def application_detail(request, pk):
         "page_title": f"{application.member.display_name()}",
         "can_update_status": can_update_status,
         "related_applications": related_applications,
+        "templates": templates,
+        "documents": application.documents.all(),
     })
 
 @external_user_permissions_required(
@@ -904,6 +909,25 @@ def application_status_update(request, pk):
             app.supervisor_comment = supervisor_comment
             if new_status == "ACCEPTED":
                 app.accepted_at = timezone.now()
+
+                template_id = request.POST.get("document_template")
+
+                if template_id:
+                    try:
+                        template = DocumentTemplate.objects.get(pk=template_id)
+
+                        # Create EMPTY document linked to application
+                        GeneratedDocument.objects.create(
+                            template=template,
+                            context_data={},  # empty → student fills it
+                            created_by=request.user,
+                            application=app
+                        )
+
+                    except DocumentTemplate.DoesNotExist:
+                        messages.error(request, "Invalid document template selected.")
+                        return redirect("astrolink:application_detail", pk=pk)
+        
             app.save()
 
             messages.success(request, "Application reviewed successfully.")
