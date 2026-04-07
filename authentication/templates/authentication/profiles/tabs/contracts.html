@@ -3,7 +3,7 @@
         {% for doc in contracts %}
             <div class="list-group-item d-flex justify-content-between align-items-start">
                 <div>
-                    <strong>{{ doc.template.name }}</strong>
+                    <strong>{{ doc.name }}</strong>
                     <div class="text-muted">
                         Created: {{ doc.created_at|date:"d-m-Y H:i" }}
                     </div>

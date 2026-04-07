@@ -64,7 +64,12 @@ class TemplateAsset(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.template.name})"
-    
+
+# Helper for name formatting  
+class SafeDict(dict):
+    def __missing__(self, key):
+        return f"{{{key}}}"  # keeps placeholder visible
+
 class GeneratedDocument(models.Model):
     template = models.ForeignKey(DocumentTemplate,null=True,on_delete=models.SET_NULL)
 
@@ -150,15 +155,15 @@ class GeneratedDocument(models.Model):
         self.save(update_fields=["is_locked"])
 
     def save(self, *args, **kwargs):
-        if not self.name and self.template and self.template.name_template:
+        if self.template and self.template.name_template:
             try:
-                self.name = self.template.name_template.format(**self.context_data)
-            except KeyError:
-                pass
-        super().save(*args, **kwargs)
+                self.name = self.template.name_template.format_map(
+                    SafeDict(self.context_data)
+                )
+            except Exception:
+                self.name = self.template.name_template
 
-    def __str__(self):
-        return self.name or f"Document {self.id}"
+        super().save(*args, **kwargs)
     
 class Attestation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
