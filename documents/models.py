@@ -4,6 +4,7 @@ import uuid, hashlib, hmac, json, os
 from django.utils import timezone
 from django.core.files import File
 from astrolink.models import Application
+from .storage import PrivateMediaStorage
 
 def template_upload_path(instance, filename):
     return f"documents/templates/{instance.name}/{filename}"
@@ -69,13 +70,16 @@ class TemplateAsset(models.Model):
 class SafeDict(dict):
     def __missing__(self, key):
         return f"{{{key}}}"  # keeps placeholder visible
+    
+def private_upload_path(instance, filename):
+    return f"generated_documents/{filename}"
 
 class GeneratedDocument(models.Model):
     template = models.ForeignKey(DocumentTemplate,null=True,on_delete=models.SET_NULL)
 
     context_data = models.JSONField()
 
-    pdf_file = models.FileField(upload_to="documents/generated/",blank=True,null=True)
+    pdf_file = models.FileField(upload_to=private_upload_path,storage=PrivateMediaStorage(),blank=True,null=True)
 
     name = models.CharField(max_length=255, blank=True)
 

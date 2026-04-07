@@ -2,6 +2,9 @@ import os
 import time
 import subprocess
 
+from django.urls import reverse
+from urllib.parse import urlencode
+
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, FileResponse, Http404
@@ -20,7 +23,7 @@ from .utils import build_render_context, sync_signers
 from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
 
 def generate_pdf(template, context_data, output_folder="generated", use_temp=True):
-    base_dir = os.path.join(settings.MEDIA_ROOT, "generated_documents")
+    base_dir = os.path.join(settings.PRIVATE_MEDIA_ROOT, "generated_documents")
 
     if use_temp:
         base_dir = os.path.join(base_dir, "temp")
@@ -288,7 +291,6 @@ def lock_document(request, pk):
     return redirect(request.META.get("HTTP_REFERER", "documents:generated_document_view"))
 
 @require_POST
-# @external_user_permissions_required('create_generateddocument')
 def generate_preview(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
     DynamicForm = build_dynamic_form(template)
@@ -305,13 +307,11 @@ def generate_preview(request, template_id):
             use_temp=True
         )
 
-        # Convert file path → URL
-        relative_path = os.path.relpath(
-            pdf_path,
-            settings.MEDIA_ROOT
-        )
+        print("PDF PATH:", pdf_path)
 
-        pdf_url = settings.MEDIA_URL + relative_path.replace("\\", "/")
+        # Build URL to preview view
+        query_string = urlencode({"path": pdf_path})
+        pdf_url = f"{reverse('documents:preview_pdf')}?{query_string}"
 
         # Cleanup old previews
         cleanup_temp_previews(folder="temp")
@@ -321,6 +321,28 @@ def generate_preview(request, template_id):
     return JsonResponse({
         "error": form.errors
     }, status=400)
+
+def preview_pdf(request):
+    file_path = request.GET.get("path")
+
+    if not file_path:
+        raise Http404("No file specified.")
+    
+    print("RAW PATH:", file_path)
+
+    file_path = file_path.split("?")[0]
+
+    # SECURITY: ensure path is inside PRIVATE_MEDIA_ROOT
+    abs_path = os.path.abspath(file_path)
+    base_dir = os.path.abspath(settings.PRIVATE_MEDIA_ROOT)
+
+    if not abs_path.startswith(base_dir):
+        raise Http404("Invalid file path.")
+
+    if not os.path.exists(abs_path):
+        raise Http404("File not found.")
+
+    return FileResponse(open(abs_path, "rb"), content_type="application/pdf")
 
 @external_user_permissions_required(
     "read_generateddocument",

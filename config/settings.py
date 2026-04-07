@@ -149,6 +149,7 @@ else:
 # Media files (User uploads)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private_media")
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100 MB
