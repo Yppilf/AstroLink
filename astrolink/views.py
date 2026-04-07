@@ -22,7 +22,8 @@ from .templatetags.render_markdown import render_markdown_safe
 from datetime import datetime
 from .dynamic_email import send_dynamic_email
 from .utils import get_full_url
-
+from django.utils import timezone
+from documents.models import DocumentTemplate, GeneratedDocument
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -863,6 +864,8 @@ def application_detail(request, pk):
             case_study=application.case_study
         ).exclude(pk=application.pk)
 
+    templates = DocumentTemplate.objects.filter(is_active=True).all()
+
     return render(request, "forum/application_detail.html", {
         "application": application,
         "target": target,
@@ -870,6 +873,8 @@ def application_detail(request, pk):
         "page_title": f"{application.member.display_name()}",
         "can_update_status": can_update_status,
         "related_applications": related_applications,
+        "templates": templates,
+        "documents": application.documents.all(),
     })
 
 @external_user_permissions_required(
@@ -881,10 +886,66 @@ def application_status_update(request, pk):
     app = get_object_or_404(Application, pk=pk)
 
     if request.method == "POST":
-        form = ApplicationStatusForm(request.POST, instance=app)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Status updated successfully!")
+        new_status = request.POST.get("status")
+        supervisor_comment = request.POST.get("supervisor_comment")
+
+        # --- Supervisor actions ---
+        if owns_application_nonstudent(request.user, app):
+
+            # Prevent re-review
+            if app.status != "PENDING":
+                messages.error(request, "This application has already been reviewed.")
+                return redirect("astrolink:application_detail", pk=pk)
+
+            if new_status not in ["ACCEPTED", "REJECTED"]:
+                messages.error(request, "Invalid status transition.")
+                return redirect("astrolink:application_detail", pk=pk)
+
+            if not supervisor_comment:
+                messages.error(request, "Please provide a reason or instructions.")
+                return redirect("astrolink:application_detail", pk=pk)
+
+            app.status = new_status
+            app.supervisor_comment = supervisor_comment
+            if new_status == "ACCEPTED":
+                app.accepted_at = timezone.now()
+
+                template_id = request.POST.get("document_template")
+
+                if template_id:
+                    try:
+                        template = DocumentTemplate.objects.get(pk=template_id)
+
+                        # Create EMPTY document linked to application
+                        GeneratedDocument.objects.create(
+                            template=template,
+                            context_data={},  # empty → student fills it
+                            created_by=request.user,
+                            application=app
+                        )
+
+                    except DocumentTemplate.DoesNotExist:
+                        messages.error(request, "Invalid document template selected.")
+                        return redirect("astrolink:application_detail", pk=pk)
+        
+            app.save()
+
+            messages.success(request, "Application reviewed successfully.")
+
+        # --- Student confirmation ---
+        elif request.user == app.member:
+            if not app.can_confirm:
+                messages.error(request, "You can only confirm accepted applications within the deadline.")
+                return redirect("astrolink:application_detail", pk=pk)
+
+            app.status = "CONFIRMED"
+            app.save()
+
+            messages.success(request, "Application confirmed!")
+
+        else:
+            messages.error(request, "You are not allowed to perform this action.")
+
     return redirect("astrolink:application_detail", pk=pk)
 
 # -----------------------------------------------

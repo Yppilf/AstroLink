@@ -22,9 +22,19 @@
                     {% endif %}
                 </div>
 
-                <span class="badge bg-secondary">
-                    {{ app.get_status_display }}
-                </span>
+                <div class="d-flex flex-column align-items-end gap-1">
+
+                    <span class="badge bg-secondary">
+                        {{ app.get_status_display }}
+                    </span>
+
+                    {% if app.can_confirm %}
+                        <span class="badge bg-warning">
+                            ⏳ Confirmation deadline {{ app.confirmation_deadline|date:"M d, H:i" }}
+                        </span>
+                    {% endif %}
+
+                </div>
             </a>
         {% endfor %}
     </div>

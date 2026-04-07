@@ -99,7 +99,9 @@ def owns_company(user, company):
 def owns_generated_document(user, document: GeneratedDocument):
     if not user.is_authenticated:
         return False
-    return document.signers.filter(user=user).exists()
+    return (
+        document.application and document.application.member == user and not document.application.is_expired
+    ) or document.signers.filter(user=user).exists()
 
 
 def has_permission(

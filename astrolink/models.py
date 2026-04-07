@@ -1,5 +1,8 @@
 from django.db import models
 from authentication.models import User, SupervisorProfile, StudentProfile, AssociationProfile
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -101,9 +104,10 @@ class ResearchGroup(models.Model):
 
 class Application(models.Model):
     STATUS_CHOICES = [
-        ("UNHANDLED", "Not yet handled"),
-        ("INPROGRESS", "Handling in progress"),
-        ("HANDLED", "Handled"),
+        ("PENDING", "Pending review"),
+        ("ACCEPTED", "Accepted by supervisor"),
+        ("REJECTED", "Rejected by supervisor"),
+        ("CONFIRMED", "Confirmed by student"),
     ]
 
     member = models.ForeignKey(User, on_delete=models.CASCADE, related_name="member")
@@ -114,10 +118,28 @@ class Application(models.Model):
     motivation = models.TextField()
     interest = models.TextField()
     comments = models.TextField(null=True, blank=True)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="UNHANDLED")
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="PENDING")
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    supervisor_comment = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.member.display_name()
+    
+    @property
+    def is_pending(self):
+        return self.status == "PENDING"
+
+    @property
+    def is_accepted(self):
+        return self.status == "ACCEPTED"
+
+    @property
+    def is_rejected(self):
+        return self.status == "REJECTED"
+
+    @property
+    def is_confirmed(self):
+        return self.status == "CONFIRMED"
     
     @property
     def status_display(self):
@@ -126,4 +148,20 @@ class Application(models.Model):
     @property
     def is_general(self):
         return not self.project and not self.case_study
+    
+    @property
+    def confirmation_deadline(self):
+        if not self.accepted_at:
+            return None
+        return self.accepted_at + timedelta(days=settings.APPLICATION_CONFIRMATION_DAYS)
+    
+    @property
+    def is_expired(self):
+        if not self.is_accepted or not self.confirmation_deadline:
+            return False
+        return timezone.now() > self.confirmation_deadline
+    
+    @property
+    def can_confirm(self):
+        return self.is_accepted and not self.is_expired
     
