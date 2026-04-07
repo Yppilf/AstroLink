@@ -35,6 +35,10 @@ def log_email_attempt(recipients, template_id, dynamic_data, status, error=None)
 
 def send_dynamic_email(recipients, template_id, dynamic_data):
     """Send email via Brevo if within limit, otherwise log it."""
+    # [DEBUG] to avoid sending unnecessary emails while testing
+    print(f"Email triggered to {recipients} with template {template_id}")
+    return
+
     try:
         # Ensure list
         if isinstance(recipients, str):

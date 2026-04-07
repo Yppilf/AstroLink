@@ -37,10 +37,36 @@
                 <!-- Status -->
                 <div class="mb-4">
                     <h4>Status: {{ application.get_status_display }}</h4>
-                    {% if can_update_status %}
+                    {% if application.supervisor_comment %}
+                        <div class="mb-3">
+                            <p class="text-muted"><strong>Supervisor response:</strong> {{ application.supervisor_comment }}</p>
+                        </div>
+                    {% endif %}
+                    {% if can_update_status and application.is_pending %}
                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
                             Change Status
                         </button>
+                    {% endif %}
+                    {% if application.is_accepted %}
+                        {% if application.is_expired %}
+                            <div class="alert alert-danger mt-2">
+                                This offer has expired.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mt-2">
+                                Please confirm before 
+                                <strong>{{ application.confirmation_deadline }}</strong>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if application.can_confirm and request.user == application.member %}
+                        <form method="POST" action="{% url 'astrolink:application_status_update' application.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                Confirm Participation
+                            </button>
+                        </form>
                     {% endif %}
                 </div>
             </div>
@@ -86,13 +112,18 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <select name="status" class="form-select">
-                            {% for value, label in application.STATUS_CHOICES %}
-                            <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                            {% endfor %}
+                        <!-- Status select -->
+                        <select name="status" class="form-select mb-3">
+                            <option value="ACCEPTED">Accept</option>
+                            <option value="REJECTED">Reject</option>
                         </select>
+
+                        <!-- Supervisor comment -->
+                        <div class="mb-3">
+                            <label class="form-label">Comment / Instructions</label>
+                            <textarea name="supervisor_comment" class="form-control" rows="4" required></textarea>
+                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
