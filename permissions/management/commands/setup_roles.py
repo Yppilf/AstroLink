@@ -52,7 +52,8 @@ class Command(BaseCommand):
             ('documenttemplate', DocumentTemplate, ["create", "read", "update", "delete"]),
             ('templatefield', TemplateField, ["create", "read", "update", "delete"]),
             ('templateasset', TemplateAsset, ["create", "read", "update", "delete"]),
-            ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),
+            ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),   # General creation etc
+            ('lock_generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),  # Locking the document
             ('documentsigner', DocumentSigner, ["create", "read", "update", "delete"]),
         ]
 
@@ -115,6 +116,7 @@ class Command(BaseCommand):
 
                 'create_generateddocument',
                 'create_documentsigner',
+                'update_lock_generateddocument',    # Can lock own documents, but student cannot, so use together with update_generateddocument
             ],  
             'Association': [
                 'read_supervisor',
@@ -131,6 +133,7 @@ class Command(BaseCommand):
                 'read_tag',
 
                 'create_generateddocument',
+                'update_lock_generateddocument',
                 'create_documentsigner',
             ],  
             'Own Data': [ 

@@ -78,18 +78,20 @@ class GeneratedDocument(models.Model):
     last_edited_at = models.DateTimeField(null=True, blank=True)
 
     @property
-    def is_fully_signed(self):
-        signature_fields = self.template.fields.filter(field_type="signature")
+    def all_signers_assigned(self):
+        return self.template.fields.filter(field_type="signature").count() == self.signers.count()
 
-        total_fields = signature_fields.count()
-        total_signers = self.signers.count()
-
-        # Condition 1: all signature fields have assigned signers
-        if total_fields != total_signers:
-            return False
-
-        # Condition 2: all signers have signed
+    @property
+    def all_signers_signed(self):
         return not self.signers.filter(signed=False).exists()
+
+    @property
+    def is_fully_signed(self):
+        return self.all_signers_assigned and self.all_signers_signed
+    
+    @property
+    def is_locked_effective(self):
+        return self.is_locked or self.is_fully_signed
 
     def update_context(self, new_context_data: dict):
         """
@@ -98,7 +100,7 @@ class GeneratedDocument(models.Model):
         - Wipe all signatures
         - Regenerate PDF
         """
-        if self.is_locked:
+        if self.is_locked_effective:
             raise ValueError("Document is locked and cannot be edited.")
 
         # 1. Update context
@@ -140,10 +142,6 @@ class GeneratedDocument(models.Model):
 
     def lock(self):
         self.is_locked = True
-        self.save(update_fields=["is_locked"])
-
-    def unlock(self):
-        self.is_locked = False
         self.save(update_fields=["is_locked"])
 
     def save(self, *args, **kwargs):

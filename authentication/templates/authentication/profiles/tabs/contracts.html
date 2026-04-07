@@ -9,28 +9,58 @@
                     </div>
                     {% if doc.is_fully_signed %}
                         <div class="text-success">All signatures completed</div>
+                    {% elif doc.is_locked %}
+                        <div class="text-info">Locked - awaiting signatures</div>
                     {% else %}
-                        <div class="text-warning">Pending signatures</div>
+                        <div class="text-warning">Editable - not finalized</div>
                     {% endif %}
                 </div>
 
-                <div class="d-flex gap-2">
-                    <a href="{% url 'documents:generated_document_view' doc.id %}" 
-                       class="btn btn-sm btn-outline-primary" target="_blank">View PDF</a>
+                <div class="d-flex gap-2 flex-wrap">
 
+                    <!-- View -->
+                    <a href="{% url 'documents:generated_document_view' doc.id %}" 
+                    class="btn btn-sm btn-outline-primary" target="_blank">
+                        View PDF
+                    </a>
+
+                    <!-- Edit -->
+                    {% if not doc.is_locked_effective %}
+                        <a href="{% url 'documents:generated_document_edit' doc.id %}" 
+                        class="btn btn-sm btn-outline-secondary">
+                            Edit
+                        </a>
+                    {% endif %}
+
+                    <!-- Lock -->
+                    {% if can_lock_flag and not doc.is_locked_effective %}
+                        <form method="post" 
+                            action="{% url 'documents:lock_document' doc.id %}"
+                            class="lock-form"
+                            data-all-assigned="{{ doc.all_signers_assigned|yesno:'true,false' }}">
+                            {% csrf_token %}
+                            <button type="button" 
+                                    class="btn btn-sm btn-warning lock-btn">
+                                Lock
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <!-- Sign -->
                     {% for signer in doc.signers.all %}
                         {% if not signer.signed and signer.user == request.user %}
                             <form method="post" 
-                                  action="{% url 'documents:sign_generated_document' doc.id signer.field.id %}" 
-                                  style="display:inline;">
+                                action="{% url 'documents:sign_generated_document' doc.id signer.field.id %}"
+                                class="sign-form">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-success"
-                                        onclick="return confirm('Sign this contract?');">
+                                <button type="button" 
+                                        class="btn btn-sm btn-success sign-btn">
                                     Sign
                                 </button>
                             </form>
                         {% endif %}
                     {% endfor %}
+
                 </div>
             </div>
         {% endfor %}
@@ -38,3 +68,61 @@
 {% else %}
     <p class="text-muted">No contracts found.</p>
 {% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".lock-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            const form = this.closest(".lock-form");
+            const allAssigned = form.dataset.allAssigned === "true";
+
+            let title = "Lock document?";
+            let text = "This will lock the document. It can no longer be edited.";
+
+            if (!allAssigned) {
+                text = "Not all signature fields are assigned.\n\n" +
+                       "After locking, you cannot add or change signers.\n\n" +
+                       "Are you sure you want to continue?";
+            }
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: allAssigned ? "warning" : "error",
+                showCancelButton: true,
+                confirmButtonText: "Yes, lock it",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#f0ad4e",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".sign-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            const form = this.closest(".sign-form");
+
+            Swal.fire({
+                title: "Sign document?",
+                text: "You are about to digitally sign this document. This action is recorded and cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, sign",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#198754",  // Bootstrap success color
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>

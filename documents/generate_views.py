@@ -182,7 +182,7 @@ def edit_document(request, pk):
     template = doc.template
 
     # Prevent editing if locked
-    if doc.is_locked:
+    if doc.is_locked_effective:
         messages.error(request, "This document is locked and cannot be edited.")
         return redirect("documents:generated_document_view", pk=doc.pk)
 
@@ -269,6 +269,23 @@ def edit_document(request, pk):
         "document": doc,
         "is_edit": True,
     })
+
+@external_user_permissions_required(
+    "update_lock_generateddocument", "update_generateddocument",
+    object_model=GeneratedDocument,
+    ownership_checker=owns_generated_document
+)
+def lock_document(request, pk):
+    doc = get_object_or_404(GeneratedDocument, pk=pk)
+
+    if doc.is_locked:
+        messages.warning(request, "Document is already locked.")
+        return redirect("documents:generated_document_view", pk=pk)
+
+    doc.lock()
+
+    messages.success(request, "Document locked successfully.")
+    return redirect(request.META.get("HTTP_REFERER", "documents:generated_document_view"))
 
 @require_POST
 # @external_user_permissions_required('create_generateddocument')
