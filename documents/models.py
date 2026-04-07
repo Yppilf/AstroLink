@@ -1,6 +1,8 @@
 from django.db import models
 from authentication.models import User, Role
-import uuid, hashlib, hmac, json
+import uuid, hashlib, hmac, json, os
+from django.utils import timezone
+from django.core.files import File
 
 def template_upload_path(instance, filename):
     return f"documents/templates/{instance.name}/{filename}"
@@ -72,12 +74,77 @@ class GeneratedDocument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL)
 
-    is_fully_signed = models.BooleanField(default=False)
+    is_locked = models.BooleanField(default=False)
+    last_edited_at = models.DateTimeField(null=True, blank=True)
 
-    def update_signed_status(self):
-        all_signed = not self.signers.filter(signed=False).exists()
-        self.is_fully_signed = all_signed
-        self.save(update_fields=["is_fully_signed"])
+    @property
+    def is_fully_signed(self):
+        signature_fields = self.template.fields.filter(field_type="signature")
+
+        total_fields = signature_fields.count()
+        total_signers = self.signers.count()
+
+        # Condition 1: all signature fields have assigned signers
+        if total_fields != total_signers:
+            return False
+
+        # Condition 2: all signers have signed
+        return not self.signers.filter(signed=False).exists()
+
+    def update_context(self, new_context_data: dict):
+        """
+        Safely update document content:
+        - Prevent editing if locked
+        - Wipe all signatures
+        - Regenerate PDF
+        """
+        if self.is_locked:
+            raise ValueError("Document is locked and cannot be edited.")
+
+        # 1. Update context
+        self.context_data = new_context_data
+        self.last_edited_at = timezone.now()
+
+        # 2. Wipe signatures
+        self._reset_signatures()
+
+        # 3. Regenerate PDF
+        from .generate_views import generate_pdf
+        from .utils import build_render_context
+        render_context = build_render_context(self)
+        pdf_path = generate_pdf(self.template, render_context, use_temp=False)
+
+        if self.pdf_file:
+            try:
+                self.pdf_file.delete(save=False)
+            except Exception:
+                pass
+
+        with open(pdf_path, "rb") as f:
+            self.pdf_file.save(os.path.basename(pdf_path), File(f), save=False)
+
+        self.save()
+
+    def _reset_signatures(self):
+        # Delete attestations
+        Attestation.objects.filter(document=self).delete()
+
+        # Reset signers
+        for signer in self.signers.all():
+            signer.signed = False
+            signer.signed_at = None
+            signer.signature_blob = None
+            signer.signature_salt = None
+            signer.attestation = None
+            signer.save()
+
+    def lock(self):
+        self.is_locked = True
+        self.save(update_fields=["is_locked"])
+
+    def unlock(self):
+        self.is_locked = False
+        self.save(update_fields=["is_locked"])
 
     def save(self, *args, **kwargs):
         if not self.name and self.template and self.template.name_template:

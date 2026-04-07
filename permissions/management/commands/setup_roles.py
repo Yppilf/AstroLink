@@ -136,6 +136,7 @@ class Command(BaseCommand):
             'Own Data': [ 
                 'read_user',
                 'read_generateddocument',
+                'update_generateddocument',
                 'update_documentsigner',
                 
                 # For Students
