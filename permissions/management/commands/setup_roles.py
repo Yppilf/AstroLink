@@ -12,7 +12,7 @@ class Command(BaseCommand):
         # Define roles
         permission_map = {}
         roles = ['System Admin', 
-                 'Programme Coordinator'
+                 'Programme Coordinator',
                  'Supervisor',
                  'Association',
                  'Own Data', 
@@ -92,17 +92,17 @@ class Command(BaseCommand):
                 'create_templatefield', 'read_templatefield', 'update_templatefield', 'delete_templatefield',
                 'create_templateasset', 'read_templateasset', 'update_templateasset', 'delete_templateasset',
             ], 
-            # 'Programme Coordinator': [
-            #     'read_supervisor', 
-            #     'read_student',
-            #     'read_association',
-            #     'create_reference', 'read_reference', 'update_reference',  
-            #     'create_project', 'read_project', 'update_project',
-            #     'read_company',
-            #     'read_casestudy',
-            #     'read_researchgroup',
-            #     'read_tag',
-            # ],
+            'Programme Coordinator': [
+                'read_supervisor', 
+                'read_student',
+                'read_association',
+                'create_reference', 'read_reference', 'update_reference',  
+                'create_project', 'read_project', 'update_project',
+                'read_company',
+                'read_casestudy',
+                'read_researchgroup',
+                'read_tag',
+            ],
             'Supervisor': [
                 'read_supervisor', 
                 'read_student',
