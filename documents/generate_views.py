@@ -2,23 +2,28 @@ import os
 import time
 import subprocess
 
+from django.urls import reverse
+from urllib.parse import urlencode
+
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.decorators.http import require_POST
-
+from django.contrib import messages
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 from django.utils import timezone
 from django.core.files import File
+from authentication.models import User
 
 from .models import DocumentTemplate, GeneratedDocument, DocumentSigner
 from .forms import build_dynamic_form
+from .utils import build_render_context, sync_signers
 
 from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
 
 def generate_pdf(template, context_data, output_folder="generated", use_temp=True):
-    base_dir = os.path.join(settings.MEDIA_ROOT, "generated_documents")
+    base_dir = os.path.join(settings.PRIVATE_MEDIA_ROOT, "generated_documents")
 
     if use_temp:
         base_dir = os.path.join(base_dir, "temp")
@@ -170,8 +175,122 @@ def generate_document(request, template_id):
         "form": form,
     })
 
+@external_user_permissions_required(
+    "update_generateddocument",
+    object_model=GeneratedDocument,
+    ownership_checker=owns_generated_document
+)
+def edit_document(request, pk):
+    doc = get_object_or_404(GeneratedDocument, pk=pk)
+    template = doc.template
+
+    # Prevent editing if locked
+    if doc.is_locked_effective:
+        messages.error(request, "This document is locked and cannot be edited.")
+        return redirect("documents:generated_document_view", pk=doc.pk)
+
+    DynamicForm = build_dynamic_form(template)
+
+    # Convert stored context_data → form initial values
+    initial_data = doc.context_data.copy()
+
+    for field in template.fields.all():
+        if field.field_type == "signature":
+            user_id = initial_data.get(field.name)
+            if user_id:
+                try:
+                    initial_data[field.name] = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    initial_data[field.name] = None
+
+    form = DynamicForm(request.POST or None, initial=initial_data)
+
+    if request.method == "POST" and form.is_valid():
+        raw_context_data = form.cleaned_data.copy()
+        context_data = {}
+
+        # Convert again (same as generate view)
+        for f in template.fields.all():
+            value = raw_context_data.get(f.name)
+
+            if f.field_type == "signature" and value:
+                context_data[f.name] = value.id
+            else:
+                context_data[f.name] = value
+
+        # 1. Detect changes
+        old_data = doc.context_data
+        content_changed = False
+        signature_changed = False
+
+        for f in template.fields.all():
+            old_value = old_data.get(f.name)
+            new_value = context_data.get(f.name)
+
+            if f.field_type == "signature":
+                if old_value != new_value:
+                    signature_changed = True
+            else:
+                if old_value != new_value:
+                    content_changed = True
+
+        # 2. Sync signers FIRST
+        if signature_changed:
+            sync_signers(doc, context_data)
+
+        # 3. Update document context
+        if content_changed:
+            # Full reset (content changed → signatures invalid)
+            doc.update_context(context_data)
+        else:
+            # No content change → just update context safely
+            doc.context_data = context_data
+            doc.last_edited_at = timezone.now()
+            doc.save(update_fields=["context_data", "last_edited_at"])
+
+            # Regenerate PDF WITHOUT wiping signatures
+            render_context = build_render_context(doc)
+            pdf_path = generate_pdf(template, render_context, use_temp=False)
+
+            if doc.pdf_file:
+                try:
+                    doc.pdf_file.delete(save=False)
+                except Exception:
+                    pass
+
+            with open(pdf_path, "rb") as f:
+                doc.pdf_file.save(os.path.basename(pdf_path), File(f), save=False)
+
+            doc.save(update_fields=["pdf_file"])
+
+        messages.success(request, "Document updated successfully.")
+        return redirect("documents:generated_document_view", pk=doc.pk)
+
+    return render(request, "documents/generate.html", {
+        "template": template,
+        "form": form,
+        "document": doc,
+        "is_edit": True,
+    })
+
+@external_user_permissions_required(
+    "update_lock_generateddocument", "update_generateddocument",
+    object_model=GeneratedDocument,
+    ownership_checker=owns_generated_document
+)
+def lock_document(request, pk):
+    doc = get_object_or_404(GeneratedDocument, pk=pk)
+
+    if doc.is_locked:
+        messages.warning(request, "Document is already locked.")
+        return redirect("documents:generated_document_view", pk=pk)
+
+    doc.lock()
+
+    messages.success(request, "Document locked successfully.")
+    return redirect(request.META.get("HTTP_REFERER", "documents:generated_document_view"))
+
 @require_POST
-@external_user_permissions_required('create_generateddocument')
 def generate_preview(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
     DynamicForm = build_dynamic_form(template)
@@ -188,13 +307,9 @@ def generate_preview(request, template_id):
             use_temp=True
         )
 
-        # Convert file path → URL
-        relative_path = os.path.relpath(
-            pdf_path,
-            settings.MEDIA_ROOT
-        )
-
-        pdf_url = settings.MEDIA_URL + relative_path.replace("\\", "/")
+        # Build URL to preview view
+        query_string = urlencode({"path": pdf_path})
+        pdf_url = f"{reverse('documents:preview_pdf')}?{query_string}"
 
         # Cleanup old previews
         cleanup_temp_previews(folder="temp")
@@ -204,6 +319,26 @@ def generate_preview(request, template_id):
     return JsonResponse({
         "error": form.errors
     }, status=400)
+
+def preview_pdf(request):
+    file_path = request.GET.get("path")
+
+    if not file_path:
+        raise Http404("No file specified.")
+
+    file_path = file_path.split("?")[0]
+
+    # SECURITY: ensure path is inside PRIVATE_MEDIA_ROOT
+    abs_path = os.path.abspath(file_path)
+    base_dir = os.path.abspath(settings.PRIVATE_MEDIA_ROOT)
+
+    if not abs_path.startswith(base_dir):
+        raise Http404("Invalid file path.")
+
+    if not os.path.exists(abs_path):
+        raise Http404("File not found.")
+
+    return FileResponse(open(abs_path, "rb"), content_type="application/pdf")
 
 @external_user_permissions_required(
     "read_generateddocument",

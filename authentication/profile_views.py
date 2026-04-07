@@ -8,6 +8,7 @@ from django.urls import reverse
 from .utils import PROFILE_REGISTRY, model_to_field_pairs
 from .forms import UserProfileForm
 from astrolink.utils import get_applications_for_user
+from permissions.utils import has_permission
 
 @login_required
 def my_profile(request):
@@ -52,10 +53,16 @@ def profile_detail(request, username):
         applications = get_applications_for_user(profile_user)
 
     contracts = None
+    can_lock_flag = False
     if request.GET.get("tab") == "contracts" and is_self:
         contracts = GeneratedDocument.objects.filter(
             signers__user=profile_user
         ).distinct().order_by("-created_at")
+
+        can_lock_flag = has_permission(
+            request.user,
+            "update_lock_generateddocument",
+        )
 
     return render(request, "authentication/profiles/profile_detail.html", {
         "profile_user": profile_user,
@@ -67,6 +74,7 @@ def profile_detail(request, username):
         "applications": applications,
         "contracts": contracts,
         "is_self": is_self,
+        "can_lock_flag": can_lock_flag,
         **extra_context
     })
 

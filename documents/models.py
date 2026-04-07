@@ -1,6 +1,10 @@
 from django.db import models
 from authentication.models import User, Role
-import uuid, hashlib, hmac, json
+import uuid, hashlib, hmac, json, os
+from django.utils import timezone
+from django.core.files import File
+from astrolink.models import Application
+from .storage import PrivateMediaStorage
 
 def template_upload_path(instance, filename):
     return f"documents/templates/{instance.name}/{filename}"
@@ -15,6 +19,8 @@ class DocumentTemplate(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL)
+
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -59,36 +65,109 @@ class TemplateAsset(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.template.name})"
+
+# Helper for name formatting  
+class SafeDict(dict):
+    def __missing__(self, key):
+        return f"{{{key}}}"  # keeps placeholder visible
     
+def private_upload_path(instance, filename):
+    return f"generated_documents/{filename}"
+
 class GeneratedDocument(models.Model):
     template = models.ForeignKey(DocumentTemplate,null=True,on_delete=models.SET_NULL)
 
     context_data = models.JSONField()
 
-    pdf_file = models.FileField(upload_to="documents/generated/",blank=True,null=True)
+    pdf_file = models.FileField(upload_to=private_upload_path,storage=PrivateMediaStorage(),blank=True,null=True)
 
     name = models.CharField(max_length=255, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL)
 
-    is_fully_signed = models.BooleanField(default=False)
+    is_locked = models.BooleanField(default=False)
+    last_edited_at = models.DateTimeField(null=True, blank=True)
 
-    def update_signed_status(self):
-        all_signed = not self.signers.filter(signed=False).exists()
-        self.is_fully_signed = all_signed
-        self.save(update_fields=["is_fully_signed"])
+    application = models.ForeignKey(Application,null=True,blank=True,on_delete=models.SET_NULL,related_name="documents")
+
+    @property
+    def all_signers_assigned(self):
+        return self.template.fields.filter(field_type="signature").count() == self.signers.count()
+
+    @property
+    def all_signers_signed(self):
+        return not self.signers.filter(signed=False).exists()
+
+    @property
+    def is_fully_signed(self):
+        return self.all_signers_assigned and self.all_signers_signed
+    
+    @property
+    def is_locked_effective(self):
+        return self.is_locked or self.is_fully_signed
+
+    def update_context(self, new_context_data: dict):
+        """
+        Safely update document content:
+        - Prevent editing if locked
+        - Wipe all signatures
+        - Regenerate PDF
+        """
+        if self.is_locked_effective:
+            raise ValueError("Document is locked and cannot be edited.")
+
+        # 1. Update context
+        self.context_data = new_context_data
+        self.last_edited_at = timezone.now()
+
+        # 2. Wipe signatures
+        self._reset_signatures()
+
+        # 3. Regenerate PDF
+        from .generate_views import generate_pdf
+        from .utils import build_render_context
+        render_context = build_render_context(self)
+        pdf_path = generate_pdf(self.template, render_context, use_temp=False)
+
+        if self.pdf_file:
+            try:
+                self.pdf_file.delete(save=False)
+            except Exception:
+                pass
+
+        with open(pdf_path, "rb") as f:
+            self.pdf_file.save(os.path.basename(pdf_path), File(f), save=False)
+
+        self.save()
+
+    def _reset_signatures(self):
+        # Delete attestations
+        Attestation.objects.filter(document=self).delete()
+
+        # Reset signers
+        for signer in self.signers.all():
+            signer.signed = False
+            signer.signed_at = None
+            signer.signature_blob = None
+            signer.signature_salt = None
+            signer.attestation = None
+            signer.save()
+
+    def lock(self):
+        self.is_locked = True
+        self.save(update_fields=["is_locked"])
 
     def save(self, *args, **kwargs):
-        if not self.name and self.template and self.template.name_template:
+        if self.template and self.template.name_template:
             try:
-                self.name = self.template.name_template.format(**self.context_data)
-            except KeyError:
-                pass
-        super().save(*args, **kwargs)
+                self.name = self.template.name_template.format_map(
+                    SafeDict(self.context_data)
+                )
+            except Exception:
+                self.name = self.template.name_template
 
-    def __str__(self):
-        return self.name or f"Document {self.id}"
+        super().save(*args, **kwargs)
     
 class Attestation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -3,7 +3,18 @@
 {% block content %}
 <div class="container">
 
-    <h2 class="mb-4">Generate: {{ template.name }}</h2>
+    <h2 class="mb-4">
+        {% if is_edit %}
+            Edit Document: {{ template.name }}
+        {% else %}
+            Generate: {{ template.name }}
+        {% endif %}
+    </h2>
+    {% if is_edit and document.signers.exists %}
+        <div class="alert alert-warning">
+            Editing this document will reset all signatures.
+        </div>
+    {% endif %}
 
     <div class="row">
         <!-- FORM -->
@@ -30,7 +41,7 @@
                         Preview
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        Generate PDF
+                        {% if is_edit %}Save Changes{% else %}Generate PDF{% endif %}
                     </button>
                 </div>
             </form>

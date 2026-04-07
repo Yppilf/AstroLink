@@ -12,7 +12,7 @@ class Command(BaseCommand):
         # Define roles
         permission_map = {}
         roles = ['System Admin', 
-                 'Programme Coordinator'
+                 'Programme Coordinator',
                  'Supervisor',
                  'Association',
                  'Own Data', 
@@ -52,7 +52,8 @@ class Command(BaseCommand):
             ('documenttemplate', DocumentTemplate, ["create", "read", "update", "delete"]),
             ('templatefield', TemplateField, ["create", "read", "update", "delete"]),
             ('templateasset', TemplateAsset, ["create", "read", "update", "delete"]),
-            ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),
+            ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),   # General creation etc
+            ('lock_generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),  # Locking the document
             ('documentsigner', DocumentSigner, ["create", "read", "update", "delete"]),
         ]
 
@@ -91,17 +92,17 @@ class Command(BaseCommand):
                 'create_templatefield', 'read_templatefield', 'update_templatefield', 'delete_templatefield',
                 'create_templateasset', 'read_templateasset', 'update_templateasset', 'delete_templateasset',
             ], 
-            # 'Programme Coordinator': [
-            #     'read_supervisor', 
-            #     'read_student',
-            #     'read_association',
-            #     'create_reference', 'read_reference', 'update_reference',  
-            #     'create_project', 'read_project', 'update_project',
-            #     'read_company',
-            #     'read_casestudy',
-            #     'read_researchgroup',
-            #     'read_tag',
-            # ],
+            'Programme Coordinator': [
+                'read_supervisor', 
+                'read_student',
+                'read_association',
+                'create_reference', 'read_reference', 'update_reference',  
+                'create_project', 'read_project', 'update_project',
+                'read_company',
+                'read_casestudy',
+                'read_researchgroup',
+                'read_tag',
+            ],
             'Supervisor': [
                 'read_supervisor', 
                 'read_student',
@@ -115,6 +116,7 @@ class Command(BaseCommand):
 
                 'create_generateddocument',
                 'create_documentsigner',
+                'update_lock_generateddocument',    # Can lock own documents, but student cannot, so use together with update_generateddocument
             ],  
             'Association': [
                 'read_supervisor',
@@ -131,11 +133,13 @@ class Command(BaseCommand):
                 'read_tag',
 
                 'create_generateddocument',
+                'update_lock_generateddocument',
                 'create_documentsigner',
             ],  
             'Own Data': [ 
                 'read_user',
                 'read_generateddocument',
+                'update_generateddocument',
                 'update_documentsigner',
                 
                 # For Students

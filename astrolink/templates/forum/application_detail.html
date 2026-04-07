@@ -37,10 +37,55 @@
                 <!-- Status -->
                 <div class="mb-4">
                     <h4>Status: {{ application.get_status_display }}</h4>
-                    {% if can_update_status %}
+                    {% if application.supervisor_comment %}
+                        <div class="mb-3">
+                            <p class="text-muted"><strong>Supervisor response:</strong> {{ application.supervisor_comment }}</p>
+                        </div>
+                    {% endif %}
+                    {% if can_update_status and application.is_pending %}
                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#statusModal">
                             Change Status
                         </button>
+                    {% endif %}
+                    {% if application.is_accepted %}
+                        {% if application.is_expired %}
+                            <div class="alert alert-danger mt-2">
+                                This offer has expired.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mt-2">
+                                Please confirm before 
+                                <strong>{{ application.confirmation_deadline }}</strong>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if application.can_confirm and request.user == application.member %}
+                        <form method="POST" action="{% url 'astrolink:application_status_update' application.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                Confirm Participation
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    {% if documents %}
+                        <div class="mt-3">
+                            <h5>Required Documents</h5>
+
+                            {% for doc in documents %}
+                                <div class="mb-2">
+                                    <a href="{% url 'documents:generated_document_edit' doc.id %}"
+                                    class="btn btn-sm btn-primary">
+                                        {% if doc.context_data %}
+                                            Continue {{ doc.template.name }}
+                                        {% else %}
+                                            Start {{ doc.template.name }}
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -86,13 +131,27 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <select name="status" class="form-select">
-                            {% for value, label in application.STATUS_CHOICES %}
-                            <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                            {% endfor %}
+                        <!-- Status select -->
+                        <select name="status" class="form-select mb-3">
+                            <option value="ACCEPTED">Accept</option>
+                            <option value="REJECTED">Reject</option>
                         </select>
+
+                        <!-- Supervisor comment -->
+                        <div class="mb-3">
+                            <label class="form-label">Comment / Instructions</label>
+                            <textarea name="supervisor_comment" class="form-control" rows="4" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Request document</label>
+                            <select name="document_template" id="documentTemplateSelect" class="form-select mb-3">
+                                <option value="">-- No document required --</option>
+                                {% for template in templates %}
+                                    <option value="{{ template.id }}">{{ template.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -134,6 +193,24 @@ document.addEventListener("DOMContentLoaded", function() {
         sidebarCard.style.maxHeight = mainCard.offsetHeight + "px";
     }
 });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusSelect = document.querySelector("select[name='status']");
+        const templateSelect = document.getElementById("documentTemplateSelect");
+
+        function toggleTemplateField() {
+            if (statusSelect.value === "ACCEPTED") {
+                templateSelect.parentElement.style.display = "block";
+            } else {
+                templateSelect.parentElement.style.display = "none";
+            }
+        }
+
+        toggleTemplateField();
+        statusSelect.addEventListener("change", toggleTemplateField);
+    });
 </script>
 
 {% endblock %}

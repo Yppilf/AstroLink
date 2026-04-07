@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = os.path.join(BASE_DIR, "config", ".env")
 load_dotenv(env_path)
 
+APPLICATION_CONFIRMATION_DAYS = 14
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -148,6 +149,7 @@ else:
 # Media files (User uploads)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private_media")
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100 MB

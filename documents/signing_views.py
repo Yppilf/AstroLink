@@ -8,6 +8,7 @@ from .generate_views import generate_pdf
 from django.utils import timezone
 from django.core.files import File
 from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
+from .utils import build_render_context
 
 CONTRACT_AUTHENTICITY_KEY = settings.CONTRACT_AUTHENTICITY_KEY
 
@@ -119,13 +120,14 @@ def sign_generated_document(request, pk, field_id):
     signer.attestation = attestation
     signer.save(update_fields=["signature_blob", "signed", "signed_at", "attestation"])
 
-    # Update document context_data
-    doc.context_data[signer.field.name] = signature_blob
+    # Update document context_data (We cant do this anymore because we need documents to be editable)
+    # doc.context_data[signer.field.name] = signature_blob
 
     # Regenerate PDF with signature
+    render_context = build_render_context(doc)
     pdf_file_path = generate_pdf(
         doc.template,
-        doc.context_data,
+        render_context,
         output_folder="generated_pdfs",
         use_temp=False
     )
@@ -144,8 +146,5 @@ def sign_generated_document(request, pk, field_id):
 
     # Finalize attestation
     attestation.finalize(signature_blob)
-
-    # Optionally update overall signed status
-    doc.update_signed_status()
 
     return redirect("documents:generated_document_view", pk=doc.id)

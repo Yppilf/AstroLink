@@ -20,7 +20,10 @@ urlpatterns = [
 
     path("templates/<int:template_id>/generate/", generate_views.generate_document, name="generate_document"),
     path("templates/<int:template_id>/preview/", generate_views.generate_preview, name="generate_preview"),
+    path("preview-pdf/", generate_views.preview_pdf, name="preview_pdf"),
 
     path("<int:pk>/sign/<int:field_id>/",signing_views.sign_generated_document,name="sign_generated_document"),
-     path('<int:pk>/view/', generate_views.generated_document_view, name='generated_document_view'),
+    path('<int:pk>/view/', generate_views.generated_document_view, name='generated_document_view'),
+    path('<int:pk>/edit/', generate_views.edit_document, name='generated_document_edit'),
+    path('<int:pk>/lock/', generate_views.lock_document, name='lock_document'),
 ]
