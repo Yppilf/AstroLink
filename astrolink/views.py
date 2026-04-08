@@ -825,7 +825,7 @@ def application_form(request, pk=None):
     )
 
     # Only send emails if this is a POST creating a new application
-    if request.method == "POST" and is_new and instance.pk:
+    if request.method == "POST" and is_new and instance.pk and (project_id or cs_id):
         send_application_emails(instance)
 
     return response
