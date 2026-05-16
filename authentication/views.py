@@ -220,6 +220,7 @@ def admin_register_view(request):
         "Student": 5,
         "Supervisor": 6,
         "Association": 7,
+        "Programme Coordinator": 11,
     }
 
     DEFAULT_TEMPLATE_ID = 5

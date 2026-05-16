@@ -15,12 +15,57 @@ from datetime import datetime
 from django.utils import timezone
 from django.core.files import File
 from authentication.models import User
+import datetime
 
 from .models import DocumentTemplate, GeneratedDocument, DocumentSigner
 from .forms import build_dynamic_form
 from .utils import build_render_context, sync_signers
 
 from permissions.utils import external_user_permissions_required, has_permission, owns_generated_document
+
+def latex_escape(value):
+    if value is None:
+        return ""
+
+    replacements = {
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\textasciicircum{}',
+        '\\': r'\textbackslash{}',
+    }
+
+    value = str(value)
+
+    for old, new in replacements.items():
+        value = value.replace(old, new)
+
+    return value
+
+def make_json_safe(value):
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    return value
+
+def run_xelatex(tex_file_path, output_dir, env_vars):
+    cmd = [
+        "xelatex",
+        "-interaction=nonstopmode",
+        "-output-directory", output_dir,
+        tex_file_path
+    ]
+
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        env=env_vars
+    )
 
 def generate_pdf(template, context_data, output_folder="generated", use_temp=True):
     base_dir = os.path.join(settings.PRIVATE_MEDIA_ROOT, "generated_documents")
@@ -64,6 +109,7 @@ def generate_pdf(template, context_data, output_folder="generated", use_temp=Tru
             datetime.strptime(v, "%Y-%m-%d").strftime("%d-%m-%Y")
             if isinstance(v, str) and len(v) == 10 else v
         ),
+        "latex": latex_escape,
     })
 
     rendered_tex = env.from_string(template_content).render(**context_data)
@@ -83,12 +129,7 @@ def generate_pdf(template, context_data, output_folder="generated", use_temp=Tru
 
     env_vars["TEXINPUTS"] = os.pathsep.join(asset_paths) + os.pathsep + env_vars.get("TEXINPUTS", "")
 
-    result = subprocess.run(
-        ["xelatex", "-interaction=nonstopmode", "-output-directory", output_dir, tex_file_path],
-        capture_output=True,
-        text=True,
-        env=env_vars
-    )
+    result = run_xelatex(tex_file_path, output_dir, env_vars)
 
     # Write log for debugging
     log_file = os.path.join(output_dir, f"{filename_base}.log")
@@ -141,7 +182,7 @@ def generate_document(request, template_id):
                 # store user id instead of User object
                 context_data[f.name] = value.id
             else:
-                context_data[f.name] = value
+                context_data[f.name] = make_json_safe(value)
 
         # Generate PDF using the context_data
         pdf_path = generate_pdf(template, context_data, use_temp=False)
@@ -216,7 +257,7 @@ def edit_document(request, pk):
             if f.field_type == "signature" and value:
                 context_data[f.name] = value.id
             else:
-                context_data[f.name] = value
+                context_data[f.name] = make_json_safe(value)
 
         # 1. Detect changes
         old_data = doc.context_data

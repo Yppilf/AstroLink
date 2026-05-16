@@ -930,6 +930,27 @@ def application_status_update(request, pk):
         
             app.save()
 
+            TEMPLATE_REVIEW = 12
+            if app.project:
+                title = app.project.title
+            elif app.case_study:
+                title = app.case_study.title
+            else:
+                title = "General Application"
+            application_url = get_full_url(reverse("astrolink:application_detail", args=[app.pk]))
+
+            send_dynamic_email(
+                app.member.email,
+                TEMPLATE_REVIEW,
+                {
+                    "recipient_name": app.member.display_name(),
+                    "project_title": title,
+                    "application_status": new_status,
+                    "application_url": application_url,
+                    "year": datetime.now().year,
+                }
+            )
+
             messages.success(request, "Application reviewed successfully.")
 
         # --- Student confirmation ---
