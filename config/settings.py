@@ -41,6 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://astrolink.siriusa.nl",
     "https://astrolink.siriusa.nl",
 ]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SITE_URL = "https://astrolink.siriusa.nl"
 
 # Application definition
