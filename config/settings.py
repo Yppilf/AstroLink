@@ -38,7 +38,6 @@ DEBUG = not is_production
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.astrolink.siriusa.nl', 'astrolink.siriusa.nl']
 CSRF_TRUSTED_ORIGINS = [
-    "http://astrolink.siriusa.nl",
     "https://astrolink.siriusa.nl",
 ]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
