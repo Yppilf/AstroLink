@@ -142,7 +142,7 @@ STATICFILES_DIRS = [
 ]
 
 if is_production:
-    STATIC_ROOT = '/var/www/astrolink/static/'
+    STATIC_ROOT = '/var/www/siriusa/static_astrolink/'
 else:
     STATIC_ROOT = BASE_DIR / 'staticfiles'
 
