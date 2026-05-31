@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application, Tag
-from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile
+from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile, CoordinatorProfile
 from documents.models import DocumentTemplate, TemplateField, TemplateAsset, GeneratedDocument, DocumentSigner
 
 class Command(BaseCommand):
@@ -39,6 +39,7 @@ class Command(BaseCommand):
             ('supervisor', SupervisorProfile, ["create", "read", "update", "delete"]),
             ('student', StudentProfile, ["create", "read", "update", "delete"]),
             ('association', AssociationProfile, ["create", "read", "update", "delete"]),
+            ('coordinator', CoordinatorProfile, ["create", "read", "update", "delete"]),
             ('reference', Reference, ["create", "read", "update", "delete"]),
             ('interest', Interest, ["create", "read", "update", "delete"]),
             ('project', Project, ["create", "read", "update", "delete"]),
@@ -79,8 +80,9 @@ class Command(BaseCommand):
         role_permissions = {
             'System Admin': [
                 'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_student', 'read_student', 'update_student', 'delete_student',
+                'create_student', 'update_student', 'delete_student',
                 'create_association', 'read_association', 'update_association', 'delete_association',
+                'create_coordinator',
                 'read_reference',
                 'read_interest',
                 'read_project',
@@ -96,6 +98,7 @@ class Command(BaseCommand):
                 'read_supervisor', 
                 'read_student',
                 'read_association',
+                'read_coordinator',
                 'create_reference', 'read_reference', 'update_reference',  
                 'create_project', 'read_project', 'update_project',
                 'read_company',
@@ -158,6 +161,9 @@ class Command(BaseCommand):
                 'delete_reference',
                 'delete_project',
                 'read_application', 'update_application',
+
+                # For Coordinators
+                'update_coordinator',
             ],
             'Student': [
                 'read_supervisor',

@@ -1,5 +1,5 @@
-from .models import User, StudentProfile, SupervisorProfile, AssociationProfile
-from .forms import StudentProfileForm, SupervisorProfileForm, AssociationProfileForm
+from .models import User, StudentProfile, SupervisorProfile, AssociationProfile, CoordinatorProfile
+from .forms import StudentProfileForm, SupervisorProfileForm, AssociationProfileForm, CoordinatorProfileForm
 
 PROFILE_REGISTRY = {
     "Student": {
@@ -21,6 +21,11 @@ PROFILE_REGISTRY = {
         "form": AssociationProfileForm,
         "label": "Association",
     },
+    "Programme Coordinator": {
+        "model": CoordinatorProfile,
+        "form": CoordinatorProfileForm,
+        "label": "Programme Coordinator",
+    },
 }
 
 def assign_role(user, role):
@@ -37,11 +42,19 @@ def assign_role(user, role):
 
 def model_to_field_pairs(instance, exclude=None):
     exclude = exclude or []
-    data = []
+    pairs = []
+
     for field in instance._meta.fields:
         if field.name in exclude:
             continue
-        value = getattr(instance, field.name)
-        if value not in ("", None):
-            data.append((field.verbose_name.title(), value))
-    return data
+
+        display_method = f"get_{field.name}_display"
+
+        if hasattr(instance, display_method):
+            value = getattr(instance, display_method)()
+        else:
+            value = getattr(instance, field.name)
+
+        pairs.append((field.verbose_name.title(), value))
+
+    return pairs

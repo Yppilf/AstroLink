@@ -2,6 +2,20 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.utils.text import slugify
 
+PROGRAMME_CHOICES = [
+    ("ASTRONOMY", "Astronomy"),
+    ("PHYSICS", "Physics"),
+    ("APPLIED_PHYSICS", "Applied Physics"),
+    ("OTHER", "Other"),
+]
+
+LEVEL_CHOICES = [
+    ("BACHELOR", "Bachelor (BSc)"),
+    ("MASTER", "Master (MSc)"),
+    ("OTHER", "Other"),
+]
+
+
 class Role(models.Model):
     name = models.CharField(max_length=255)
 
@@ -145,8 +159,8 @@ class SupervisorProfile(BaseProfile):
 class StudentProfile(BaseProfile):
     biography = models.TextField(blank=True)
     snumber = models.CharField(max_length=64, null=True, blank=True)
-    level = models.CharField(max_length=64, null=True, blank=True)
-    study_programme = models.CharField(max_length=128, blank=True)    
+    level = models.CharField(max_length=50, choices=LEVEL_CHOICES, null=True, blank=True)
+    study_programme = models.CharField(max_length=128, choices=PROGRAMME_CHOICES, null=True, blank=True)    
 
 def association_profile_picture_path(instance, filename):
     return f"associations/{instance.user.id}/{filename}"
@@ -156,3 +170,6 @@ class AssociationProfile(BaseProfile):
     website = models.CharField(max_length=64, null=True, blank=True)
     profile_picture = models.ImageField(upload_to=association_profile_picture_path,null=True,blank=True)
 
+class CoordinatorProfile(BaseProfile):
+    level = models.CharField(max_length=50, choices=LEVEL_CHOICES, null=True, blank=True)
+    study_programme = models.CharField(max_length=128, choices=PROGRAMME_CHOICES, null=True, blank=True)

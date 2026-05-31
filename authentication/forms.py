@@ -3,7 +3,7 @@ from django import forms
 import re
 from django.core.exceptions import ValidationError
 from authentication.models import User, Role
-from .models import SupervisorProfile, StudentProfile, AssociationProfile
+from .models import SupervisorProfile, StudentProfile, AssociationProfile, CoordinatorProfile
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
@@ -143,3 +143,8 @@ class AssociationProfileForm(forms.ModelForm):
     class Meta:
         model = AssociationProfile
         fields = ["biography", "website", "profile_picture"]
+
+class CoordinatorProfileForm(forms.ModelForm):
+    class Meta:
+        model = CoordinatorProfile
+        fields = ["study_programme", "level"]
