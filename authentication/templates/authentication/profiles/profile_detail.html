@@ -42,12 +42,20 @@
             </a>
         </li>
 
-        {% if is_self %}
-        <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'applications' %}active{% endif %}"
-            href="?tab=applications">My Applications</a>
-        </li>
+        {% if show_applications_tab %}
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'applications' %}active{% endif %}"
+                href="?tab=applications">
+                    {% if is_self %}
+                        My Applications
+                    {% else %}
+                        Relevant Applications
+                    {% endif %}
+                </a>
+            </li>
+        {% endif %}
 
+        {% if is_self %}
         <li class="nav-item">
             <a class="nav-link {% if active_tab == 'contracts' %}active{% endif %}"
             href="?tab=contracts">My Contracts</a>

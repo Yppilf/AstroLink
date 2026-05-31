@@ -7,8 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .utils import PROFILE_REGISTRY, model_to_field_pairs
 from .forms import UserProfileForm
-from astrolink.utils import get_applications_for_user
+from astrolink.utils import get_applications_for_user, THESIS_APPLICATION_FILTER
 from permissions.utils import has_permission
+from astrolink.models import Application
 
 @login_required
 def my_profile(request):
@@ -47,10 +48,18 @@ def profile_detail(request, username):
         extra_context = registry_entry["extra_context_fn"](profile)
 
     is_self = request.user.is_authenticated and request.user == profile_user
+    is_programme_coordinator = has_permission(request.user, "read_student") # Can be expanded to be stricter
 
-    applications = None
-    if request.GET.get("tab") == "applications"  and is_self:
-        applications = get_applications_for_user(profile_user)
+    show_applications_tab = False
+    applications = Application.objects.none()
+
+    if request.GET.get("tab") == "applications":
+        applications = get_applications_for_user(
+            request.user,
+            profile_user
+        )
+
+    show_applications_tab = is_self or is_programme_coordinator
 
     contracts = None
     can_lock_flag = False
@@ -74,6 +83,7 @@ def profile_detail(request, username):
         "applications": applications,
         "contracts": contracts,
         "is_self": is_self,
+        "show_applications_tab": show_applications_tab,
         "can_lock_flag": can_lock_flag,
         **extra_context
     })

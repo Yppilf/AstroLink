@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .templatetags.render_markdown import render_markdown_safe
 from datetime import datetime
 from .dynamic_email import send_dynamic_email
-from .utils import get_full_url, get_students_for_coordinator
+from .utils import get_full_url, get_students_for_coordinator, THESIS_APPLICATION_FILTER
 from django.utils import timezone
 from documents.models import DocumentTemplate, GeneratedDocument
 
@@ -762,6 +762,10 @@ def send_application_emails(application):
     """
     applicant = application.member
     project = application.project
+
+    if not application.project:
+        return # Not a project application, but rather a generic or case study application
+    
     supervisor = project.supervisor
     academic_supervisor = supervisor.academic_supervisor  # May be None
 
@@ -1097,23 +1101,37 @@ def student_list_data(request):
                 F("user__legal_name")
             ),
             display_email=F("user__email"),
+
             pending_count=Count(
                 "user__member",
-                filter=Q(user__member__status="PENDING"),
+                filter=(
+                    THESIS_APPLICATION_FILTER &
+                    Q(user__member__status="PENDING")
+                ),
                 distinct=True,
             ),
+
             accepted_count=Count(
                 "user__member",
-                filter=Q(user__member__status="ACCEPTED"),
+                filter=(
+                    THESIS_APPLICATION_FILTER &
+                    Q(user__member__status="ACCEPTED")
+                ),
                 distinct=True,
             ),
+
             confirmed_count=Count(
                 "user__member",
-                filter=Q(user__member__status="CONFIRMED"),
+                filter=(
+                    THESIS_APPLICATION_FILTER &
+                    Q(user__member__status="CONFIRMED")
+                ),
                 distinct=True,
             ),
+
             application_count=Count(
                 "user__member",
+                filter=THESIS_APPLICATION_FILTER,
                 distinct=True,
             ),
         )
