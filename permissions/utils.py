@@ -7,32 +7,49 @@ from authentication.models import User
 from astrolink.models import Application
 from documents.models import GeneratedDocument, DocumentSigner
 
+
 logger = logging.getLogger('core.permissions')
 
 def owns_application(user, application):
     if not user.is_authenticated:
         return False
 
-    if application.member_id == user.id:
+    elif application.member_id == user.id:
         return True
-
-    if application.project and application.project.supervisor:
-        return application.project.supervisor.user_id == user.id
+    
+    from astrolink.utils import get_students_for_coordinator, thesis_application_q
 
     if (
+        has_permission(user, "read_student")
+        and application.member.studentprofile.pk in
+        get_students_for_coordinator(user).values_list("pk", flat=True)
+    ):
+        return (
+            Application.objects
+            .filter(pk=application.pk)
+            .filter(thesis_application_q())
+            .exists()
+        )
+
+    elif application.project and application.project.supervisor:
+        return application.project.supervisor.user_id == user.id
+
+    elif (
         application.case_study
         and application.case_study.company
         and application.case_study.company.association
     ):
         return application.case_study.company.association.user_id == user.id
     
-    if (
+    elif (
         application.project is None
         and application.case_study is None
         and application.association
         and application.association.user == user
     ):
         return True
+    
+    
 
     return False
 

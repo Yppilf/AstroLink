@@ -162,6 +162,7 @@ class Command(BaseCommand):
                 'read_application', 'update_application',
 
                 # For Coordinators
+                'read_application',
                 'update_coordinator',
             ],
             'Student': [

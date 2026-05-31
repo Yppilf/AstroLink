@@ -15,6 +15,7 @@ def get_full_url(path):
 
 def get_applications_for_user(request_user, target_user):
     role = request_user.role.name if request_user.role else None
+    target_role = target_user.role.name if target_user.role else None
 
     qs = Application.objects.select_related(
         "member",
@@ -27,35 +28,60 @@ def get_applications_for_user(request_user, target_user):
     )
 
     # -------------------------
-    # STUDENT VIEW (self only)
+    # SELF VIEW: STUDENT
     # -------------------------
     if request_user == target_user and role == "Student":
         return qs.filter(member=target_user)
 
     # -------------------------
-    # SUPERVISOR VIEW
+    # SELF VIEW: SUPERVISOR
     # -------------------------
-    if role == "Supervisor":
-        return qs.filter(project__supervisor__user=request_user)
+    if request_user == target_user and role == "Supervisor":
+        return qs.filter(
+            project__supervisor__user=target_user
+        )
 
     # -------------------------
-    # ASSOCIATION VIEW
+    # SELF VIEW: ASSOCIATION
     # -------------------------
-    if role == "Association":
+    if request_user == target_user and role == "Association":
         return qs.filter(
-            Q(case_study__company__association__user=request_user)
-            | Q(association__user=request_user)
+            Q(case_study__company__association__user=target_user)
+            | Q(association__user=target_user)
         )
 
     # -------------------------
     # PROGRAMME COORDINATOR VIEW
     # -------------------------
     if has_permission(request_user, "read_student") and request_user != target_user:
-        return (
-            qs.filter(member=target_user)
-            .filter(thesis_application_q())
-            .order_by("-updated_at")
+
+        coordinator_student_user_ids = (
+            get_students_for_coordinator(request_user)
+            .values_list("user_id", flat=True)
         )
+
+        # Coordinator viewing a student profile
+        if target_role == "Student":
+            return (
+                qs.filter(
+                    member=target_user
+                )
+                .filter(thesis_application_q())
+                .distinct()
+                .order_by("-updated_at")
+            )
+
+        # Coordinator viewing a supervisor profile
+        if target_role == "Supervisor":
+            return (
+                qs.filter(
+                    project__supervisor__user=target_user,
+                    member_id__in=coordinator_student_user_ids,
+                )
+                .filter(thesis_application_q())
+                .distinct()
+                .order_by("-updated_at")
+            )
 
     return Application.objects.none()
 
