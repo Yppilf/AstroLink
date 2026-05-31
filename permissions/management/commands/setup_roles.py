@@ -80,7 +80,7 @@ class Command(BaseCommand):
         role_permissions = {
             'System Admin': [
                 'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
-                'create_student', 'update_student', 'delete_student',
+                'create_student',
                 'create_association', 'read_association', 'update_association', 'delete_association',
                 'create_coordinator',
                 'read_reference',
@@ -108,7 +108,7 @@ class Command(BaseCommand):
             ],
             'Supervisor': [
                 'read_supervisor', 
-                'read_student',
+                # 'read_student',
                 'read_association',
                 'create_reference', 'read_reference', 'update_reference',  
                 'create_project', 'read_project', 'update_project',
@@ -123,7 +123,7 @@ class Command(BaseCommand):
             ],  
             'Association': [
                 'read_supervisor',
-                'read_student',
+                # 'read_student',
                 'read_association', 
                 'read_interest',
                 'read_reference',
@@ -146,7 +146,6 @@ class Command(BaseCommand):
                 'update_documentsigner',
                 
                 # For Students
-                'read_student', 'update_student',
                 'read_application',
 
                 # For Associations
@@ -167,7 +166,6 @@ class Command(BaseCommand):
             ],
             'Student': [
                 'read_supervisor',
-                'read_student',
                 'read_association', 
                 'read_reference',
                 'read_interest',

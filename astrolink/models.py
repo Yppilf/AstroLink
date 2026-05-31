@@ -7,6 +7,7 @@ from datetime import timedelta
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True)
+    is_system = models.BooleanField(default=False,help_text="System tags cannot be deleted through the UI.")
 
     def __str__(self):
         return self.name
@@ -121,6 +122,8 @@ class Application(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="PENDING")
     accepted_at = models.DateTimeField(null=True, blank=True)
     supervisor_comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.member.display_name()

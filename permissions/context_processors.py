@@ -33,6 +33,10 @@ def global_permissions(request):
         has_permission(user, "create_documenttemplate") 
     )
 
+    can_read_students = (
+        has_permission(user, "read_student") 
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
@@ -40,4 +44,5 @@ def global_permissions(request):
         "can_admin_register": can_admin_register,
         "can_manage_tags": can_manage_tags,
         "can_manage_documents": can_manage_documents,
+        "can_read_students": can_read_students,
     }

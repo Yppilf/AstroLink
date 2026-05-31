@@ -84,6 +84,16 @@
 
             <li><hr></li>
 
+            <!-- Students -->
+            {% if can_read_students %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'student_list' 'student_detail' 'profile_detail' %}"
+                href="{% url 'astrolink:student_list' %}">
+                    <i class="bi bi-person"></i> Students
+                </a>
+            </li>
+            {% endif %}
+
             <!-- Applications -->
             {% if can_manage_applications %}
             <li class="nav-item">

@@ -3,7 +3,7 @@ from django.urls import reverse
 from .models import (
     Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag
 )
-from authentication.models import SupervisorProfile
+from authentication.models import SupervisorProfile, StudentProfile
 from .forms import (
     ProjectForm, CompanyForm, CaseStudyForm,
     ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm, TagForm
@@ -14,14 +14,14 @@ from django.contrib import messages
 from permissions.utils import external_user_permissions_required, has_permission, owns_application, owns_case_study, owns_project, owns_company, owns_application_nonstudent
 from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.db.models import Q, F
+from django.db.models import Count, Q, F
 from django.db.models.functions import Coalesce
 import json
 from django.views.decorators.csrf import csrf_exempt
 from .templatetags.render_markdown import render_markdown_safe
 from datetime import datetime
 from .dynamic_email import send_dynamic_email
-from .utils import get_full_url
+from .utils import get_full_url, get_students_for_coordinator
 from django.utils import timezone
 from documents.models import DocumentTemplate, GeneratedDocument
 
@@ -984,7 +984,7 @@ def tag_list(request):
         Tag.objects.all(),
         "Tag",
         url_prefix="tag",
-        columns=["name", "slug"],
+        columns=["name", "slug", "is_system"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -1001,7 +1001,7 @@ def tag_list_data(request):
         Tag.objects.all(),
         object_name="Tag",
         url_prefix="tag",
-        columns=["name", "slug"],
+        columns=["name", "slug", "is_system"],
         can_view=False,
         can_update=can_update,
         can_delete=can_delete,
@@ -1010,6 +1010,13 @@ def tag_list_data(request):
 @external_user_permissions_required("create_tag", "update_tag", object_model=Tag)
 def tag_form(request, pk=None):
     instance = Tag.objects.filter(pk=pk).first()
+
+    if instance.is_system:
+        messages.error(
+            request,
+            "System tags cannot be edited."
+        )
+        return redirect("astrolink:tag_list")
 
     return generic_form_view(
         request,
@@ -1022,7 +1029,20 @@ def tag_form(request, pk=None):
 @external_user_permissions_required("delete_tag", object_model=Tag)
 def tag_delete(request, pk):
     instance = get_object_or_404(Tag, pk=pk)
-    return generic_delete_view(request, instance, "Tag", url_prefix="tag")
+
+    if instance.is_system:
+        messages.error(
+            request,
+            "System tags cannot be deleted."
+        )
+        return redirect("astrolink:tag_list")
+
+    return generic_delete_view(
+        request,
+        instance,
+        "Tag",
+        url_prefix="tag",
+    )
 
 @csrf_exempt
 def render_preview(request):
@@ -1033,3 +1053,105 @@ def render_preview(request):
         return HttpResponse(html)
 
     return HttpResponse("")
+
+# -----------------------------------------------
+# STUDENTS CRUD
+# -----------------------------------------------
+@external_user_permissions_required("read_student")
+def student_list(request):
+    can_create = False
+    can_view = has_permission(request.user, "read_student")
+    can_update = False
+    can_delete = False
+
+    return generic_list_view(
+        request,
+        get_students_for_coordinator(request.user),
+        "Student",
+        url_prefix="student",
+        columns=[
+            "display_name",
+            "display_email",
+            "snumber",
+            "application_count",
+            "pending_count",
+            "confirmed_count",
+        ],
+        can_create=can_create,
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_student")
+def student_list_data(request):
+    can_view = has_permission(request.user, "read_student")
+    can_update = False
+    can_delete = False
+
+    qs = (
+        get_students_for_coordinator(request.user)
+        .annotate(
+            display_name=Coalesce(
+                F("user__screen_name"),
+                F("user__legal_name")
+            ),
+            display_email=F("user__email"),
+            pending_count=Count(
+                "user__member",
+                filter=Q(user__member__status="PENDING"),
+                distinct=True,
+            ),
+            accepted_count=Count(
+                "user__member",
+                filter=Q(user__member__status="ACCEPTED"),
+                distinct=True,
+            ),
+            confirmed_count=Count(
+                "user__member",
+                filter=Q(user__member__status="CONFIRMED"),
+                distinct=True,
+            ),
+            application_count=Count(
+                "user__member",
+                distinct=True,
+            ),
+        )
+    )
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Student",
+        url_prefix="student",
+        columns=[
+            "display_name",
+            "display_email",
+            "snumber",
+            "application_count",
+            "pending_count",
+            "confirmed_count",
+        ],
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_student")
+def student_detail(request, pk):
+    student_profile = get_object_or_404(
+        StudentProfile,
+        pk=pk,
+    )
+
+    visible_students = get_students_for_coordinator(request.user)
+
+    if not visible_students.filter(pk=student_profile.pk).exists():
+        return HttpResponseForbidden(
+            render_to_string("forum/403.html", request=request)
+        )
+
+    return redirect(
+        "authentication:profile_detail",
+        username=student_profile.user.username,
+    )

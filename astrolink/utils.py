@@ -2,6 +2,7 @@ from .models import Application
 from django.db.models import Q
 from django.conf import settings
 from django.urls import reverse
+from authentication.models import CoordinatorProfile, StudentProfile
 
 def get_full_url(path):
     """
@@ -47,3 +48,19 @@ def get_applications_for_user(user):
         )
 
     return Application.objects.none()
+
+def get_students_for_coordinator(user):
+    coordinator = CoordinatorProfile.objects.filter(user=user).first()
+
+    if not coordinator:
+        return StudentProfile.objects.none()
+
+    qs = StudentProfile.objects.select_related("user")
+
+    if coordinator.study_programme:
+        qs = qs.filter(study_programme=coordinator.study_programme)
+
+    if coordinator.level:
+        qs = qs.filter(level=coordinator.level)
+
+    return qs
