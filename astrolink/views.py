@@ -3,7 +3,7 @@ from django.urls import reverse
 from .models import (
     Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag
 )
-from authentication.models import SupervisorProfile, StudentProfile
+from authentication.models import SupervisorProfile, StudentProfile, User
 from .forms import (
     ProjectForm, CompanyForm, CaseStudyForm,
     ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm, TagForm
@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .templatetags.render_markdown import render_markdown_safe
 from datetime import datetime
 from .dynamic_email import send_dynamic_email
-from .utils import get_full_url, get_students_for_coordinator, THESIS_APPLICATION_FILTER
+from .utils import get_full_url, get_students_for_coordinator, THESIS_APPLICATION_FILTER, build_application_timeline, get_coordinator_timeline_queryset, get_coordinator_timeline_options
 from django.utils import timezone
 from documents.models import DocumentTemplate, GeneratedDocument
 
@@ -834,9 +834,6 @@ def application_form(request, pk=None):
 
     return response
 
-
-
-
 @external_user_permissions_required("delete_application",object_model=Application,
     ownership_checker=owns_application)
 def application_delete(request, pk):
@@ -931,6 +928,8 @@ def application_status_update(request, pk):
                     except DocumentTemplate.DoesNotExist:
                         messages.error(request, "Invalid document template selected.")
                         return redirect("astrolink:application_detail", pk=pk)
+            elif new_status == "REJECTED":
+                app.rejected_at = timezone.now()
         
             app.save()
 
@@ -964,6 +963,7 @@ def application_status_update(request, pk):
                 return redirect("astrolink:application_detail", pk=pk)
 
             app.status = "CONFIRMED"
+            app.confirmed_at = timezone.now()
             app.save()
 
             messages.success(request, "Application confirmed!")
@@ -1155,7 +1155,6 @@ def student_list_data(request):
         can_delete=can_delete,
     )
 
-@external_user_permissions_required("read_student")
 def student_detail(request, pk):
     student_profile = get_object_or_404(
         StudentProfile,
@@ -1173,3 +1172,60 @@ def student_detail(request, pk):
         "authentication:profile_detail",
         username=student_profile.user.username,
     )
+
+# Programme coordinator timeline dashboard
+@external_user_permissions_required("read_student")
+def application_timeline(request):
+    student_id = request.GET.get("student")
+    supervisor_id = request.GET.get("supervisor")
+    project_id = request.GET.get("project")
+    case_study_id = request.GET.get("case_study")
+
+    # -------------------------
+    # Student: resolve via StudentProfile → User
+    # -------------------------
+    student = None
+    if student_id:
+        student_profile = StudentProfile.objects.filter(id=student_id).select_related("user").first()
+        student = student_profile.user if student_profile else None
+
+    # -------------------------
+    # Other filters (unchanged)
+    # -------------------------
+    supervisor = User.objects.filter(id=supervisor_id).first() if supervisor_id else None
+    project = Project.objects.filter(id=project_id).first() if project_id else None
+    case_study = CaseStudy.objects.filter(id=case_study_id).first() if case_study_id else None
+
+    # -------------------------
+    # Timeline query
+    # -------------------------
+    qs = get_coordinator_timeline_queryset(
+        coordinator_user=request.user,
+        student=student,
+        supervisor=supervisor,
+        project=project,
+        case_study=case_study,
+    )
+
+    timeline = build_application_timeline(qs)
+
+    # -------------------------
+    # Dropdown options (unchanged, still profiles)
+    # -------------------------
+    students, supervisors, projects, case_studies = get_coordinator_timeline_options(request.user)
+
+    active_filters = {
+        "student": student,
+        "supervisor": supervisor,
+        "project": project,
+        "case_study": case_study,
+    }
+
+    return render(request, "forum/application_timeline.html", {
+        "timeline": timeline,
+        "active_filters": active_filters,
+        "students": students,
+        "supervisors": supervisors,
+        "projects": projects,
+        "case_studies": case_studies,
+    })

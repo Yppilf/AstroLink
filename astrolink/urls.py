@@ -61,6 +61,7 @@ urlpatterns = [
     path("applications/create/", views.application_form, name="application_create"),
     path("applications/update/<int:pk>/", views.application_form, name="application_update"),
     path("applications/delete/<int:pk>/", views.application_delete, name="application_delete"),
+    path("applications/timeline/", views.application_timeline, name="application_timeline"),
     path("applications/<int:pk>/", views.application_detail, name="application_detail"),
     path("applications/<int:pk>/status/", views.application_status_update, name="application_status_update"),
     path("applications/data/", views.application_list_data, name="application_list_data"),

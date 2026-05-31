@@ -92,6 +92,13 @@
                     <i class="bi bi-person"></i> Students
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'application_timeline' %}"
+                href="{% url 'astrolink:application_timeline' %}">
+                    <i class="bi bi-calendar"></i> Application Timeline
+                </a>
+            </li>
             {% endif %}
 
             <!-- Applications -->

@@ -87,6 +87,7 @@ class GeneratedDocument(models.Model):
     created_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL)
 
     is_locked = models.BooleanField(default=False)
+    locked_at = models.DateTimeField(null=True, blank=True)
     last_edited_at = models.DateTimeField(null=True, blank=True)
 
     application = models.ForeignKey(Application,null=True,blank=True,on_delete=models.SET_NULL,related_name="documents")
@@ -156,7 +157,8 @@ class GeneratedDocument(models.Model):
 
     def lock(self):
         self.is_locked = True
-        self.save(update_fields=["is_locked"])
+        self.locked_at = timezone.now()
+        self.save(update_fields=["is_locked", "locked_at"])
 
     def save(self, *args, **kwargs):
         if self.template and self.template.name_template:
