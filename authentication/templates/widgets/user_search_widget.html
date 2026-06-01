@@ -1,0 +1,36 @@
+<div class="user-search-wrapper">
+    <input type="hidden" name="{{ widget.name }}" id="user-id-{{ widget.attrs.id }}" value="{{ widget.value|default_if_none:'' }}">
+    <input
+        type="text"
+        class="form-control user-search-input"
+        id="{{ widget.attrs.id }}"
+        value="{{ initial_value|default_if_none:'' }}"
+        placeholder="Type name or email"
+        autocomplete="off"
+    >
+    <ul class="user-suggestions" data-search-url="{{ search_url }}" style="display: none;"></ul>
+</div>
+<style>
+.user-search-wrapper {
+    position: relative;
+}
+
+.user-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+
+    max-height: 200px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0 0;
+}
+
+</style>

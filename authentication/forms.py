@@ -4,6 +4,7 @@ import re
 from django.core.exceptions import ValidationError
 from authentication.models import User, Role
 from .models import SupervisorProfile, StudentProfile, AssociationProfile, CoordinatorProfile
+from .widgets import SupervisorSearchWidget
 
 class LoginForm(forms.Form):
     email = forms.EmailField()
@@ -99,6 +100,8 @@ class UserProfileForm(forms.ModelForm):
         ]
 
 class SupervisorProfileForm(forms.ModelForm):
+    academic_supervisor = forms.ModelChoiceField(queryset=SupervisorProfile.objects.none(), required=False, widget=SupervisorSearchWidget())
+    
     class Meta:
         model = SupervisorProfile
         fields = ["biography", "pnumber", "profile_picture", "academic_supervisor"]
@@ -109,15 +112,18 @@ class SupervisorProfileForm(forms.ModelForm):
             )
         }
     
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.instance.pk:
             self.fields["academic_supervisor"].queryset = (
                 SupervisorProfile.objects
+                .filter(
+                    academic_supervisor__isnull=True
+                )
                 .exclude(pk=self.instance.pk)
                 .select_related("user")
-                .order_by("user__screen_name", "user__legal_name")
             )
 
     def clean_academic_supervisor(self):

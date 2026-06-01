@@ -253,3 +253,55 @@ def delete_account(request):
         messages.success(request, "Your account has been successfully deleted.")
         return redirect("astrolink:forum_home")
     return redirect("authentication:profile_detail", username=request.user.username)
+
+@login_required
+def user_search(request):
+    role = request.GET.get("role")
+    q = request.GET.get("q", "").strip()
+
+    users = User.objects.all()
+
+    if role:
+        users = users.filter(role__name=role)
+
+    if q:
+        users = users.filter(
+            Q(screen_name__icontains=q)
+            | Q(legal_name__icontains=q)
+        )
+
+    results = [
+        {
+            "id": user.id,
+            "label": user.display_name(),
+        }
+        for user in users[:20]
+    ]
+
+    return JsonResponse(results, safe=False)
+
+@login_required
+def supervisor_search(request):
+    q = request.GET.get("q", "")
+
+    supervisors = (
+        SupervisorProfile.objects
+        .filter(academic_supervisor__isnull=True)
+        .select_related("user")
+    )
+
+    if q:
+        supervisors = supervisors.filter(
+            Q(user__screen_name__icontains=q)
+            | Q(user__legal_name__icontains=q)
+        )
+
+    data = [
+        {
+            "id": s.pk,
+            "label": s.name,
+        }
+        for s in supervisors[:20]
+    ]
+
+    return JsonResponse(data, safe=False)
