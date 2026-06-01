@@ -1016,7 +1016,7 @@ def tag_list_data(request):
 def tag_form(request, pk=None):
     instance = Tag.objects.filter(pk=pk).first()
 
-    if instance.is_system:
+    if pk is not None and instance.is_system:
         messages.error(
             request,
             "System tags cannot be edited."
