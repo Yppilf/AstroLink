@@ -877,6 +877,7 @@ def application_detail(request, pk):
         "related_applications": related_applications,
         "templates": templates,
         "documents": application.documents.all(),
+        "user_role": str(request.user.role)
     })
 
 @external_user_permissions_required(

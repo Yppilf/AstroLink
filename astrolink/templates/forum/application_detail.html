@@ -30,7 +30,7 @@
                 <p class="text-muted mb-1">
                     <strong>Submitted by:</strong>
                     <a href="{% url 'authentication:profile_detail' application.member.username %}" target="_blank">
-                        {{ application.member.display_name }}
+                        {{ application.member.display_name }} ({{application.member.email}})
                     </a>
                 </p>
 
@@ -54,7 +54,11 @@
                             </div>
                         {% else %}
                             <div class="alert alert-warning mt-2">
-                                Please confirm before 
+                                {% if user_role == "Supervisor" or user_role == "Programme Coordinator" %}
+                                    Student confirmation deadline: 
+                                {% else %}
+                                    Please confirm before 
+                                {% endif %}
                                 <strong>{{ application.confirmation_deadline }}</strong>
                             </div>
                         {% endif %}
@@ -69,21 +73,28 @@
                         </form>
                     {% endif %}
 
-                    {% if documents %}
+                    {% if documents and not application.is_expired and not doc.is_locked %}
                         <div class="mt-3">
                             <h5>Required Documents</h5>
 
                             {% for doc in documents %}
+                                {% if not doc.context_data and user_role == "Student" %}
+                                    <div class="mb-2">
+                                        <a href="{% url 'documents:generated_document_edit' doc.id %}"
+                                        class="btn btn-sm btn-primary">
+                                            Start {{ doc.template.name }}
+                                        </a>
+                                    </div>
+                                {% elif doc.context_data %}
                                 <div class="mb-2">
                                     <a href="{% url 'documents:generated_document_edit' doc.id %}"
                                     class="btn btn-sm btn-primary">
-                                        {% if doc.context_data %}
-                                            Continue {{ doc.template.name }}
-                                        {% else %}
-                                            Start {{ doc.template.name }}
-                                        {% endif %}
+                                        Continue {{ doc.template.name }}
                                     </a>
                                 </div>
+                                {% else %}
+                                    {{ doc.template.name }} (not available yet)
+                                {% endif %}
                             {% endfor %}
                         </div>
                     {% endif %}
