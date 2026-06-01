@@ -20,7 +20,8 @@ def global_permissions(request):
     can_admin_register = (
         has_permission(user, "create_student") and
         has_permission(user, "create_supervisor") and
-        has_permission(user, "create_association")
+        has_permission(user, "create_association") and 
+        has_permission(user, "create_coordinator") 
     )
 
     can_manage_tags = (
@@ -37,6 +38,10 @@ def global_permissions(request):
         has_permission(user, "read_student") 
     )
 
+    can_manage_coordinators = (
+        has_permission(user, "read_coordinator") 
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
@@ -45,4 +50,5 @@ def global_permissions(request):
         "can_manage_tags": can_manage_tags,
         "can_manage_documents": can_manage_documents,
         "can_read_students": can_read_students,
+        "can_manage_coordinators": can_manage_coordinators,
     }

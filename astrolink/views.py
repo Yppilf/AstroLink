@@ -3,7 +3,7 @@ from django.urls import reverse
 from .models import (
     Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag
 )
-from authentication.models import SupervisorProfile, StudentProfile, User
+from authentication.models import SupervisorProfile, StudentProfile, User, CoordinatorProfile
 from .forms import (
     ProjectForm, CompanyForm, CaseStudyForm,
     ResearchGroupForm, ReferenceForm, ApplicationForm, ApplicationStatusForm, InterestForm, TagForm
@@ -24,6 +24,7 @@ from .dynamic_email import send_dynamic_email
 from .utils import get_full_url, get_students_for_coordinator, THESIS_APPLICATION_FILTER, build_application_timeline, get_coordinator_timeline_queryset, get_coordinator_timeline_options
 from django.utils import timezone
 from documents.models import DocumentTemplate, GeneratedDocument
+from authentication.forms import CoordinatorProfileForm
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -1229,3 +1230,94 @@ def application_timeline(request):
         "projects": projects,
         "case_studies": case_studies,
     })
+
+# -----------------------------------------------
+# COORDINATOR MANAGEMENT
+# -----------------------------------------------
+@external_user_permissions_required("read_coordinator")
+def coordinator_list(request):
+    can_create = False
+    can_view = has_permission(request.user, "read_coordinator")
+    can_update = has_permission(request.user, "update_coordinator")
+    can_delete = False
+
+    return generic_list_view(
+        request,
+        CoordinatorProfile.objects.select_related("user"),
+        "Programme Coordinator",
+        url_prefix="coordinator",
+        columns=[
+            "display_name",
+            "display_email",
+            "study_programme",
+            "level",
+        ],
+        can_create=can_create,
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_coordinator")
+def coordinator_list_data(request):
+    can_view = has_permission(request.user, "read_coordinator")
+    can_update = has_permission(request.user, "update_coordinator")
+    can_delete = False
+
+    qs = (
+        CoordinatorProfile.objects
+        .select_related("user")
+        .annotate(
+            display_name=Coalesce(
+                F("user__screen_name"),
+                F("user__legal_name")
+            ),
+            display_email=F("user__email"),
+        )
+    )
+
+    return generic_list_data(
+        request,
+        qs,
+        object_name="Programme Coordinator",
+        url_prefix="coordinator",
+        columns=[
+            "display_name",
+            "display_email",
+            "study_programme",
+            "level",
+        ],
+        can_view=can_view,
+        can_update=can_update,
+        can_delete=can_delete,
+    )
+
+@external_user_permissions_required("read_coordinator")
+def coordinator_detail(request, pk):
+    coordinator_profile = get_object_or_404(
+        CoordinatorProfile,
+        pk=pk,
+    )
+
+    return redirect(
+        "authentication:profile_detail",
+        username=coordinator_profile.user.username,
+    )
+
+@external_user_permissions_required(
+    "update_coordinator",
+    object_model=CoordinatorProfile,
+)
+def coordinator_form(request, pk):
+    instance = get_object_or_404(
+        CoordinatorProfile.objects.select_related("user"),
+        pk=pk,
+    )
+
+    return generic_form_view(
+        request,
+        CoordinatorProfileForm,
+        instance,
+        f"Configure {instance.user.display_name()}",
+        url_prefix="coordinator",
+    )

@@ -147,6 +147,15 @@
             </li>
             {% endif %}
 
+            {% if can_manage_coordinators %}
+            <li class="nav-item">
+                <a class="nav-link sidebar-link {% navactive 'coordinator_list' 'coordinator_update' %}"
+                href="{% url 'astrolink:coordinator_list' %}">
+                    <i class="bi bi-person-gear"></i> Coordinators
+                </a>
+            </li>
+            {% endif %}
+
             {% if can_manage_tags %}
             <li class="nav-item">
                 <a class="nav-link sidebar-link {% navactive 'tag_list' 'tag_create' 'tag_update' %}"

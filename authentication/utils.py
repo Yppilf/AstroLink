@@ -21,11 +21,12 @@ PROFILE_REGISTRY = {
         "form": AssociationProfileForm,
         "label": "Association",
     },
-    "Programme Coordinator": {
-        "model": CoordinatorProfile,
-        "form": CoordinatorProfileForm,
-        "label": "Programme Coordinator",
-    },
+    # Commented because programme coordinator fields are permission scope management and should be managed only by system admin
+    # "Programme Coordinator": {
+    #     "model": CoordinatorProfile,
+    #     "form": CoordinatorProfileForm,
+    #     "label": "Programme Coordinator",
+    # },
 }
 
 def assign_role(user, role):

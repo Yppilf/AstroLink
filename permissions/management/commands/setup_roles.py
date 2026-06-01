@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 'create_supervisor', 'read_supervisor', 'update_supervisor', 'delete_supervisor',
                 'create_student',
                 'create_association', 'read_association', 'update_association', 'delete_association',
-                'create_coordinator',
+                'create_coordinator', 'read_coordinator', 'update_coordinator',
                 'read_reference',
                 'read_interest',
                 'read_project',
@@ -163,7 +163,6 @@ class Command(BaseCommand):
 
                 # For Coordinators
                 'read_application',
-                'update_coordinator',
             ],
             'Student': [
                 'read_supervisor',

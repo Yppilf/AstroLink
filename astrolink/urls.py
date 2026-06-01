@@ -83,4 +83,10 @@ urlpatterns = [
     path("students/", views.student_list, name="student_list"),
     path("students/data/", views.student_list_data, name="student_list_data"),
     path("students/<int:pk>/", views.student_detail, name="student_detail"),
+
+    # COORDINATORS
+    path("coordinators/", views.coordinator_list, name="coordinator_list"),
+    path("coordinators/update/<int:pk>/", views.coordinator_form, name="coordinator_update"),
+    path("coordinators/<int:pk>/", views.coordinator_detail, name="coordinator_detail"),
+    path("coordinators/data/", views.coordinator_list_data, name="coordinator_list_data"),
 ]
