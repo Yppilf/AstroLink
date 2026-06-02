@@ -1,6 +1,7 @@
 from django import forms
 from .models import TemplateField, TemplateAsset, DocumentTemplate
 from authentication.models import User
+from authentication.widgets import StudentUserSearchWidget, SupervisorUserSearchWidget, CoordinatorUserSearchWidget, AssociationUserSearchWidget
 
 class DocumentTemplateForm(forms.ModelForm):
     class Meta:
@@ -122,16 +123,33 @@ def build_dynamic_form(template):
             )
 
         elif f.field_type == "signature":
-            queryset = User.objects.filter(is_active=True)
 
-            if f.allowed_roles.exists():
-                queryset = queryset.filter(role__in=f.allowed_roles.all())
+            queryset = User.objects.filter(
+                is_active=True,
+                role__in=f.allowed_roles.all()
+            )
+
+            USER_SEARCH_WIDGETS = {
+                "Student": StudentUserSearchWidget,
+                "Supervisor": SupervisorUserSearchWidget,
+                "Association": AssociationUserSearchWidget,
+                "Programme Coordinator": CoordinatorUserSearchWidget,
+            }
+
+            role = f.allowed_roles.first()
+
+            widget_class = USER_SEARCH_WIDGETS.get(
+                role.name if role else None,
+                StudentUserSearchWidget
+            )
+
+            widget = widget_class()
 
             field = forms.ModelChoiceField(
                 queryset=queryset.distinct(),
                 required=f.required,
                 label=f.label,
-                widget=forms.Select(attrs={"class": "form-control"})
+                widget=widget
             )
 
         else:

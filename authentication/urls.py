@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from . import password_reset
 from . import profile_views
-from .ajax_views import supervisor_search
+from . import ajax_views
 
 app_name = "authentication"
 
@@ -25,5 +25,9 @@ urlpatterns = [
     path("pending-supervisors/data/", views.pending_supervisors_list_data, name="pending_supervisors_list_data"),
     path("pending-supervisors/<int:user_id>/approve/", views.approve_supervisor, name="approve_supervisor"),
 
-    path("ajax/supervisor-search/", supervisor_search, name="supervisor_search"),
+    path("ajax/supervisor-search/", ajax_views.supervisor_search, name="supervisor_search"),
+    path("ajax/student-user-search/", ajax_views.student_user_search, name="student_user_search"),
+    path("ajax/supervisor-user-search/", ajax_views.supervisor_user_search, name="supervisor_user_search"),
+    path("ajax/association-user-search/", ajax_views.association_user_search, name="association_user_search"),
+    path("ajax/coordinator-user-search/", ajax_views.coordinator_user_search, name="coordinator_user_search"),
 ]

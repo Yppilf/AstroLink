@@ -100,31 +100,38 @@ class UserProfileForm(forms.ModelForm):
         ]
 
 class SupervisorProfileForm(forms.ModelForm):
-    academic_supervisor = forms.ModelChoiceField(queryset=SupervisorProfile.objects.none(), required=False, widget=SupervisorSearchWidget())
-    
+    academic_supervisor = forms.ModelChoiceField(
+        queryset=SupervisorProfile.objects.none(),
+        required=False,
+        widget=SupervisorSearchWidget(),
+    )
+
     class Meta:
         model = SupervisorProfile
-        fields = ["biography", "pnumber", "profile_picture", "academic_supervisor"]
+        fields = [
+            "biography",
+            "pnumber",
+            "profile_picture",
+            "academic_supervisor",
+        ]
         help_texts = {
             "academic_supervisor": (
                 "If you are a PhD student, select your academic supervisor. "
                 "Leave empty if you are an independent supervisor."
             )
         }
-    
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.instance.pk:
-            self.fields["academic_supervisor"].queryset = (
-                SupervisorProfile.objects
-                .filter(
-                    academic_supervisor__isnull=True
-                )
-                .exclude(pk=self.instance.pk)
-                .select_related("user")
+        self.fields["academic_supervisor"].queryset = (
+            SupervisorProfile.objects
+            .filter(
+                academic_supervisor__isnull=True
             )
+            .exclude(pk=self.instance.pk if self.instance.pk else None)
+            .select_related("user")
+        )
 
     def clean_academic_supervisor(self):
         supervisor = self.cleaned_data.get("academic_supervisor")
@@ -138,7 +145,6 @@ class SupervisorProfileForm(forms.ModelForm):
             )
 
         return supervisor
-
 
 class StudentProfileForm(forms.ModelForm):
     class Meta:
