@@ -61,6 +61,18 @@
                         {% endif %}
                     {% endfor %}
 
+                    {% if is_self %}
+                        <form method="post"
+                            action="{% url 'documents:ignore_document' doc.id %}"
+                            class="ignore-document-form">
+                            {% csrf_token %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary ignore-document-btn">
+                                <i class="bi bi-eye-slash"></i> Ignore
+                            </button>
+                        </form>
+                    {% endif %}
+
                 </div>
             </div>
         {% endfor %}
@@ -117,6 +129,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 confirmButtonText: "Yes, sign",
                 cancelButtonText: "Cancel",
                 confirmButtonColor: "#198754",  // Bootstrap success color
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".ignore-document-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            const form = this.closest(".ignore-document-form");
+
+            Swal.fire({
+                title: "Ignore contract?",
+                text: "This action cannot be undone. The contract will no longer appear in your profile.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, ignore it",
+                cancelButtonText: "Cancel",
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();

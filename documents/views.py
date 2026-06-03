@@ -2,9 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponse, Http404, FileResponse
 from astrolink.views import generic_list_view, generic_list_data, generic_form_view, generic_delete_view
-from .models import DocumentTemplate, TemplateField, TemplateAsset
+from .models import DocumentTemplate, TemplateField, TemplateAsset, GeneratedDocument, IgnoredDocument
 from .forms import DocumentTemplateForm, TemplateFieldForm, TemplateAssetForm
 from permissions.utils import external_user_permissions_required, has_permission
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
 
 @external_user_permissions_required('read_documenttemplate')
 def template_list(request):
@@ -143,3 +146,28 @@ def delete_asset(request, asset_id):
     asset = get_object_or_404(TemplateAsset, pk=asset_id)
     asset.delete()
     return JsonResponse({"success": True})
+
+@login_required
+@require_POST
+def ignore_document(request, pk):
+    document = get_object_or_404(
+        GeneratedDocument,
+        pk=pk
+    )
+
+    IgnoredDocument.objects.get_or_create(
+        user=request.user,
+        document=document,
+    )
+
+    messages.success(
+        request,
+        "Contract removed from your profile."
+    )
+
+    url = reverse(
+        "authentication:profile_detail",
+        kwargs={"username": request.user.username}
+    )
+
+    return redirect(f"{url}?tab=contracts")

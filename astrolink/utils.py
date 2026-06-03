@@ -5,6 +5,7 @@ from django.urls import reverse
 from authentication.models import CoordinatorProfile, StudentProfile
 from permissions.utils import has_permission
 from itertools import chain
+from astrolink.models import IgnoredApplication
 
 def get_full_url(path):
     """
@@ -27,6 +28,14 @@ def get_applications_for_user(request_user, target_user):
         "case_study__company",
         "case_study__company__association",
     )
+
+    ignored_ids = (
+        IgnoredApplication.objects
+        .filter(user=request_user)
+        .values_list("application_id", flat=True)
+    )
+
+    qs = qs.exclude(id__in=ignored_ids)
 
     # -------------------------
     # SELF VIEW: STUDENT

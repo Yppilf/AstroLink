@@ -170,3 +170,12 @@ class Application(models.Model):
     def can_confirm(self):
         return self.is_accepted and not self.is_expired
     
+class IgnoredApplication(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="ignored_applications")
+    application = models.ForeignKey(Application,on_delete=models.CASCADE,related_name="ignored_by")
+
+    ignored_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "application")
+

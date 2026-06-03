@@ -65,6 +65,7 @@ urlpatterns = [
     path("applications/<int:pk>/", views.application_detail, name="application_detail"),
     path("applications/<int:pk>/status/", views.application_status_update, name="application_status_update"),
     path("applications/data/", views.application_list_data, name="application_list_data"),
+    path("applications/<int:pk>/ignore/", views.ignore_application, name="ignore_application"),
 
     # TAGS
     path("tags/", views.tag_list, name="tag_list"),

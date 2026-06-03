@@ -170,6 +170,15 @@ class GeneratedDocument(models.Model):
                 self.name = self.template.name_template
 
         super().save(*args, **kwargs)
+
+class IgnoredDocument(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="ignored_documents")
+    document = models.ForeignKey(GeneratedDocument,on_delete=models.CASCADE,related_name="ignored_by")
+
+    ignored_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "document")
     
 class Attestation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

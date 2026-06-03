@@ -26,4 +26,6 @@ urlpatterns = [
     path('<int:pk>/view/', generate_views.generated_document_view, name='generated_document_view'),
     path('<int:pk>/edit/', generate_views.edit_document, name='generated_document_edit'),
     path('<int:pk>/lock/', generate_views.lock_document, name='lock_document'),
+
+    path("<int:pk>/ignore/",views.ignore_document,name="ignore_document",),
 ]

@@ -10,6 +10,7 @@ from .forms import UserProfileForm
 from astrolink.utils import get_applications_for_user, THESIS_APPLICATION_FILTER
 from permissions.utils import has_permission
 from astrolink.models import Application
+from documents.models import IgnoredDocument
 
 @login_required
 def my_profile(request):
@@ -64,9 +65,17 @@ def profile_detail(request, username):
     contracts = None
     can_lock_flag = False
     if request.GET.get("tab") == "contracts" and is_self:
-        contracts = GeneratedDocument.objects.filter(
-            signers__user=profile_user
-        ).distinct().order_by("-created_at")
+        contracts = (
+            GeneratedDocument.objects
+            .filter(signers__user=profile_user)
+            .exclude(
+                id__in=IgnoredDocument.objects.filter(
+                    user=request.user
+                ).values_list("document_id", flat=True)
+            )
+            .distinct()
+            .order_by("-created_at")
+        )
 
         can_lock_flag = has_permission(
             request.user,

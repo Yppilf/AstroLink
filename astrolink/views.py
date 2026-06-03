@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import (
-    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag
+    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag, IgnoredApplication
 )
 from authentication.models import SupervisorProfile, StudentProfile, User, CoordinatorProfile
 from .forms import (
@@ -25,6 +25,8 @@ from .utils import get_full_url, get_students_for_coordinator, THESIS_APPLICATIO
 from django.utils import timezone
 from documents.models import DocumentTemplate, GeneratedDocument
 from authentication.forms import CoordinatorProfileForm
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -974,6 +976,28 @@ def application_status_update(request, pk):
             messages.error(request, "You are not allowed to perform this action.")
 
     return redirect("astrolink:application_detail", pk=pk)
+
+@login_required
+@require_POST
+def ignore_application(request, pk):
+    application = get_object_or_404(Application, pk=pk)
+
+    IgnoredApplication.objects.get_or_create(
+        user=request.user,
+        application=application,
+    )
+
+    messages.success(
+        request,
+        "Application removed from your profile."
+    )
+
+    url = reverse(
+        "authentication:profile_detail",
+        kwargs={"username": request.user.username}
+    )
+
+    return redirect(f"{url}?tab=applications")
 
 # -----------------------------------------------
 # TAGS CRUD

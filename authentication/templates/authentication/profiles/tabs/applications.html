@@ -1,43 +1,85 @@
 {% if applications %}
     <div class="list-group">
         {% for app in applications %}
-            <a href="{% url 'astrolink:application_detail' app.pk %}" 
-               class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
-                
-                <div>
-                    <strong>{{ app.member.display_name }}</strong>
 
-                    {% if app.project %}
-                        <div class="text-muted">
-                            Project: {{ app.project.title }}
-                        </div>
-                    {% elif app.case_study %}
-                        <div class="text-muted">
-                            Case Study: {{ app.case_study.title }}
-                        </div>
-                    {% else %}
-                        <div class="text-muted">
-                            General Application
-                        </div>
-                    {% endif %}
-                </div>
+            <div class="list-group-item d-flex justify-content-between align-items-start">
 
-                <div class="d-flex flex-column align-items-end gap-1">
+                <a href="{% url 'astrolink:application_detail' app.pk %}"
+                   class="text-decoration-none flex-grow-1 me-3">
 
-                    <span class="badge bg-secondary">
-                        {{ app.get_status_display }}
-                    </span>
+                    <div>
+                        <strong>{{ app.member.display_name }}</strong>
 
-                    {% if app.can_confirm %}
-                        <span class="badge bg-warning">
-                            ⏳ Confirmation deadline {{ app.confirmation_deadline|date:"M d, H:i" }}
+                        {% if app.project %}
+                            <div class="text-muted">
+                                Project: {{ app.project.title }}
+                            </div>
+                        {% elif app.case_study %}
+                            <div class="text-muted">
+                                Case Study: {{ app.case_study.title }}
+                            </div>
+                        {% else %}
+                            <div class="text-muted">
+                                General Application
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">
+                            {{ app.get_status_display }}
                         </span>
-                    {% endif %}
 
-                </div>
-            </a>
+                        {% if app.can_confirm %}
+                            <span class="badge bg-warning">
+                                ⏳ Confirmation deadline {{ app.confirmation_deadline|date:"M d, H:i" }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                </a>
+
+                {% if is_self %}
+                    <form method="post"
+                        action="{% url 'astrolink:ignore_application' app.pk %}"
+                        class="ignore-application-form">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-eye-slash"></i> Ignore
+                        </button>
+                    </form>
+                {% endif %}
+
+            </div>
+
         {% endfor %}
     </div>
 {% else %}
     <p class="text-muted">No applications found.</p>
 {% endif %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".ignore-application-form").forEach(form => {
+
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: "Ignore application?",
+                    text: "This action cannot be undone. The application will no longer appear on your profile.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, ignore it",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
