@@ -92,21 +92,22 @@ class TemplateFieldForm(forms.ModelForm):
 
         return instance
     
-def build_dynamic_form(template):
+def build_dynamic_form(template, preview=False):
     class DynamicForm(forms.Form):
         pass
 
     for f in template.fields.all():
+        required = False if preview else f.required
 
         if f.field_type == "integer":
-            field = forms.IntegerField(required=f.required, label=f.label, widget=forms.TextInput(attrs={"class": "form-control"}))
+            field = forms.IntegerField(required=required, label=f.label, widget=forms.TextInput(attrs={"class": "form-control"}))
 
         elif f.field_type == "float":
-            field = forms.FloatField(required=f.required, label=f.label, widget=forms.TextInput(attrs={"class": "form-control"}))
+            field = forms.FloatField(required=required, label=f.label, widget=forms.TextInput(attrs={"class": "form-control"}))
 
         elif f.field_type == "date":
             field = forms.DateField(
-                required=f.required,
+                required=required,
                 label=f.label,
                 widget=forms.DateInput(attrs={"type": "date", "class": "form-control"})
             )
@@ -116,7 +117,7 @@ def build_dynamic_form(template):
 
         elif f.field_type == "choice":
             field = forms.ChoiceField(
-                required=f.required,
+                required=required,
                 label=f.label,
                 choices=[(c, c) for c in (f.choices or [])],
                 widget=forms.Select(attrs={"class": "form-control"})
@@ -147,14 +148,14 @@ def build_dynamic_form(template):
 
             field = forms.ModelChoiceField(
                 queryset=queryset.distinct(),
-                required=f.required,
+                required=required,
                 label=f.label,
                 widget=widget
             )
 
         else:
             field = forms.CharField(
-                required=f.required,
+                required=required,
                 label=f.label,
                 widget=forms.TextInput(attrs={"class": "form-control"})
             )

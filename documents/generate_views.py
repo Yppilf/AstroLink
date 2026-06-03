@@ -334,12 +334,41 @@ def lock_document(request, pk):
 @require_POST
 def generate_preview(request, template_id):
     template = get_object_or_404(DocumentTemplate, pk=template_id)
-    DynamicForm = build_dynamic_form(template)
+    DynamicForm = build_dynamic_form(template, preview=True)
 
     form = DynamicForm(request.POST)
 
+    def get_preview_value(field):
+        if field.field_type == "signature":
+            return f"[{field.label}]"
+
+        if field.field_type == "date":
+            return f"[{field.label}]"
+
+        if field.field_type == "integer":
+            return 0
+
+        if field.field_type == "float":
+            return 0.0
+
+        if field.field_type == "boolean":
+            return False
+
+        if field.field_type == "choice":
+            return field.choices[0] if field.choices else ""
+
+        return f"[{field.label}]"
+
     if form.is_valid():
-        context_data = form.cleaned_data
+        context_data = {}
+
+        for field in template.fields.all():
+            value = form.data.get(field.name)
+
+            if not value:
+                value = get_preview_value(field)
+
+            context_data[field.name] = value
 
         pdf_path = generate_pdf(
             template,
