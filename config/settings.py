@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'authentication',
     'documents',
     'metrics',
+    'documentation',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,85 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+<style>
+    .docs-toc ul {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .docs-toc ul ul {
+        padding-left: 1rem;
+    }
+
+    .docs-toc a {
+        display: block;
+        font-size: 0.9rem;
+        color: #666;
+        text-decoration: none;
+        padding: 2px 0;
+    }
+
+    .docs-toc a:hover {
+        color: var(--color-accent);
+    }
+
+    .docs-toc {
+        border-left: 2px solid #ddd;
+        margin-left: 0.5rem;
+        padding-left: 0.75rem;
+    }
+
+    .breadcrumb-item {
+        cursor: default;
+    }
+
+    .breadcrumb-item:not(.active):hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4">
+            <div class="position-sticky">
+
+                <h5 class="px-3">Documentation</h5>
+
+                <ul class="nav flex-column">
+
+                    {% for item in docs_nav %}
+                        <li class="nav-item">
+
+                            <a class="nav-link {% if item.slug == current_slug %}active{% endif %}"
+                            href="{% url 'documentation:docs_page' item.slug %}">
+                                {{ item.title }}
+                            </a>
+
+                            {% if item.slug == current_slug and toc %}
+                                <div class="docs-toc px-3">
+                                    {{ toc|safe }}
+                                </div>
+                            {% endif %}
+
+                        </li>
+                    {% endfor %}
+
+                </ul>
+
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <div class="docs-content">
+                {% block docs_content %}{% endblock %}
+            </div>
+        </main>
+
+    </div>
+</div>
+{% endblock %}

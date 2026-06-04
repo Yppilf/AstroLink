@@ -184,18 +184,6 @@ def pending_supervisors_list_data(request):
         "has_actions": True
     })
 
-
-@external_user_permissions_required("create_supervisor")
-def approve_supervisor(request, user_id):
-    """
-    Approves a pending supervisor by activating their account.
-    """
-    user = get_object_or_404(User, pk=user_id, role__name="Supervisor", is_active=False)
-    user.is_active = True
-    user.save()
-    messages.success(request, f"{user.display_name()} has been approved.")
-    return redirect("authentication:pending_supervisors")
-
 @external_user_permissions_required('create_supervisor')
 def approve_supervisor(request, user_id):
     user = get_object_or_404(User, pk=user_id, role__name="Supervisor", is_active=False)
