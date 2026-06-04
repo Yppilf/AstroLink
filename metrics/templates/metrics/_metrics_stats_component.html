@@ -59,7 +59,6 @@
     const groupBy = "{{ groupBy }}";
     const sectionField = "{{ sectionField }}";
     const valueField = "{{ valueField }}";
-    const authField = "{{ authField }}";
     const xAxisTitle = "{{ xAxisTitle|escapejs }}";
     const yAxisTitle = "{{ yAxisTitle|escapejs }}";
 
@@ -156,7 +155,6 @@
             tr.innerHTML = `
                 <td>${formatTime(row[groupBy])}</td>
                 <td>${row[sectionField]}</td>
-                <td>${row[authField] ? "Authenticated" : "Anonymous"}</td>
                 <td>${row[valueField]}</td>
             `;
             tbody.appendChild(tr);
@@ -227,22 +225,23 @@
 
         const rawLabels = [...new Set(pageData.map(r=>r[groupBy]))];
         const labels = rawLabels.map(formatTime);
-        const keys = [...new Set(pageData.map(r=>`${r[sectionField]}|${r[authField]}`))];
+        const keys = [...new Set(pageData.map(r=>`${r[sectionField]}`))];
 
         const colors = [
             "#4e79a7","#f28e2b","#e15759","#76b7b2",
             "#59a14f","#edc949","#af7aa1","#ff9da7"
         ];
 
-        const datasets = keys.map((key,i)=>{
-            const [section, auth] = key.split("|");
+        const datasets = keys.map((key, i) => {
             return {
-                label: `${section} (${auth==="true"?"Auth":"Anon"})`,
-                data: rawLabels.map(l=>{
-                    const row = pageData.find(r=>r[groupBy]===l && r[sectionField]===section && String(r[authField])===auth);
+                label: key,
+                data: rawLabels.map(l => {
+                    const row = pageData.find(r =>
+                        r[groupBy] === l && r[sectionField] === key
+                    );
                     return row ? row[valueField] : 0;
                 }),
-                backgroundColor: colors[i%colors.length]
+                backgroundColor: colors[i % colors.length]
             };
         });
 

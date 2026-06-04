@@ -5,7 +5,6 @@ from .models import RawEvent, HourlyAggregate, AggregationState
 from .utils import floor_to_hour
 from django.db.models import Sum, Count
 from django.core.cache import cache
-import hyperloglog, pickle
 
 def should_attempt_aggregation():
     return cache.add("metrics:aggregate_lock", True, timeout=60)
@@ -28,28 +27,25 @@ def aggregate_completed_hours():
 
         aggregates = {}
 
-        for event in events.only("visitor_id", "section").iterator(chunk_size=1000):
+        for event in events.only("user_id", "section").iterator(chunk_size=1000):
             key = event.section
 
             if key not in aggregates:
                 aggregates[key] = {
                     "total_requests": 0,
-                    "hll": hyperloglog.HyperLogLog(0.01),  # ~1% error
+                    "users": set(),
                 }
 
             aggregates[key]["total_requests"] += 1
-            aggregates[key]["hll"].add(event.visitor_id)
+            aggregates[key]["users"].add(event.user_id)
 
         for section, data in aggregates.items():
-            hll = data["hll"]
-
             HourlyAggregate.objects.update_or_create(
                 period_start=target_hour,
                 section=section,
                 defaults={
                     "total_requests": data["total_requests"],
-                    "unique_visitors": len(hll),
-                    "unique_visitors_hll": pickle.dumps(hll),
+                    "unique_visitors": len(data["users"]),
                 }
             )
 

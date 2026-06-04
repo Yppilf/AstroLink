@@ -19,6 +19,9 @@ def metrics_dashboard(request):
 
     qs = HourlyAggregate.objects.filter(period_start__gte=since)
 
+    # -------------------
+    # HOURLY
+    # -------------------
     hourly_stats = (
         qs.values("period_start", "section")
         .annotate(
@@ -28,62 +31,38 @@ def metrics_dashboard(request):
         .order_by("-period_start")
     )
 
+    # -------------------
     # DAILY
-    daily_data = {}
+    # -------------------
+    daily_stats = (
+        qs.annotate(day=TruncDate("period_start"))
+        .values("day", "section")
+        .annotate(
+            total_requests=Sum("total_requests"),
+            unique_visitors=Sum("unique_visitors"),
+        )
+        .order_by("-day")
+    )
 
-    for row in qs.annotate(day=TruncDate("period_start")):
-        key = (row.day, row.section)
-
-        if key not in daily_data:
-            daily_data[key] = {
-                "total_requests": 0,
-                "hll": hyperloglog.HyperLogLog(0.01),
-            }
-
-        daily_data[key]["total_requests"] += row.total_requests
-        daily_data[key]["hll"].update(pickle.loads(row.unique_visitors_hll))
-
-    daily_stats = [
-        {
-            "day": day,
-            "section": section,
-            "total_requests": data["total_requests"],
-            "unique_visitors": len(data["hll"]),
-        }
-        for (day, section), data in daily_data.items()
-    ]
-
-    daily_stats.sort(key=lambda x: x["day"], reverse=True)
-
+    # -------------------
     # WEEKLY
-    weekly_data = {}
-
-    for row in qs.annotate(week=TruncWeek("period_start")):
-        key = (row.week, row.section)
-
-        if key not in weekly_data:
-            weekly_data[key] = {
-                "total_requests": 0,
-                "hll": hyperloglog.HyperLogLog(0.01),
-            }
-
-        weekly_data[key]["total_requests"] += row.total_requests
-        weekly_data[key]["hll"].update(pickle.loads(row.unique_visitors_hll))
-
-    weekly_stats = [
-        {
-            "week": week,
-            "section": section,
-            "total_requests": data["total_requests"],
-            "unique_visitors": len(data["hll"]),
-        }
-        for (week, section), data in weekly_data.items()
-    ]
-
-    weekly_stats.sort(key=lambda x: x["week"], reverse=True)
+    # -------------------
+    weekly_stats = (
+        qs.annotate(week=TruncWeek("period_start"))
+        .values("week", "section")
+        .annotate(
+            total_requests=Sum("total_requests"),
+            unique_visitors=Sum("unique_visitors"),
+        )
+        .order_by("-week")
+    )
 
     return render(request, "metrics/dashboard.html", {
         "hourly_stats_json": json.dumps(list(hourly_stats), cls=DjangoJSONEncoder),
-        "daily_stats_json": json.dumps(daily_stats, cls=DjangoJSONEncoder),
-        "weekly_stats_json": json.dumps(weekly_stats, cls=DjangoJSONEncoder),
+        "daily_stats_json": json.dumps(list(daily_stats), cls=DjangoJSONEncoder),
+        "weekly_stats_json": json.dumps(list(weekly_stats), cls=DjangoJSONEncoder),
+
+        "hourly_headers": ["Hour", "Section", "Requests"],
+        "daily_headers": ["Date", "Section", "Requests"],
+        "weekly_headers": ["Week", "Section", "Requests"],
     })

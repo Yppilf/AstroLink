@@ -16,7 +16,6 @@ class HourlyAggregate(models.Model):
     section = models.CharField(max_length=50)
     total_requests = models.IntegerField()
     unique_visitors = models.IntegerField()
-    unique_visitors_hll = models.BinaryField()
 
     class Meta:
         unique_together = ("period_start", "section")
