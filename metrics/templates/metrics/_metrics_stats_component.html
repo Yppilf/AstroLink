@@ -1,0 +1,274 @@
+<div class="card shadow-sm mb-4">
+    <div class="card-header">{{ title }}</div>
+    <div class="card-body">
+        <div class="row">
+            <!-- TABLE -->
+            <div class="col-md-6 mb-3">
+                <div class="table-responsive">
+                    <div class="table-fixed-height">
+                        <table class="table table-striped table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    {% for h in headers %}
+                                        <th>{{ h }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody-{{ id }}"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <select id="jumpTo-{{ id }}" class="form-select form-select-sm w-auto"></select>
+                    <div id="pagination-{{ id }}"></div>
+                </div>
+                <div id="pagination-{{ id }}" class="d-flex justify-content-center"></div>
+            </div>
+
+            <!-- CHART -->
+            <div class="col-md-6 mb-3">
+                <canvas id="chart-{{ id }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-fixed-height {
+        height: 400px;
+        overflow-y: auto;
+        display: block; /* THIS is the missing piece */
+    }
+
+    .table-fixed-height thead th {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+    }
+
+    .table-responsive {
+        height: 450px;
+        overflow-y: hidden;
+    }
+</style>
+
+<script>
+(function(){
+    const rawData = {{ data|safe }};
+    const groupBy = "{{ groupBy }}";
+    const sectionField = "{{ sectionField }}";
+    const valueField = "{{ valueField }}";
+    const authField = "{{ authField }}";
+    const xAxisTitle = "{{ xAxisTitle|escapejs }}";
+    const yAxisTitle = "{{ yAxisTitle|escapejs }}";
+
+    const pageSize = 12;
+    let currentPage = 1;
+    let chart;
+
+    function groupByTime(data) {
+        const map = {};
+        data.forEach(row => {
+            const key = row[groupBy];
+            if (!map[key]) map[key] = [];
+            map[key].push(row);
+        });
+        return Object.entries(map);
+    }
+
+    const grouped = groupByTime(rawData);
+
+    function buildPages(groups) {
+        const pages = [];
+        let current = [];
+        let count = 0;
+
+        groups.forEach(([_, rows]) => {
+            if (count >= pageSize && current.length) {
+                pages.push(current.flat());
+                current = [];
+                count = 0;
+            }
+            current.push(rows);
+            count += rows.length;
+        });
+
+        if (current.length) {
+            pages.push(current.flat());
+        }
+
+        return pages;
+    }
+
+    const pages = buildPages(grouped);
+    const totalPages = pages.length;
+
+    function formatTime(raw) {
+        if (!raw) return "—";
+
+        const d = new Date(raw);
+        if (isNaN(d)) return raw;
+
+        if (groupBy === "period_start") {
+            // HOURLY
+            return d.toLocaleString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        if (groupBy === "day") {
+            // DAILY
+            return d.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+        }
+
+        if (groupBy === "week") {
+            // WEEKLY → show start of week
+            return `Week of ${d.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            })}`;
+        }
+
+        return raw;
+    }
+
+    function renderTable(pageData) {
+        const tbody = document.getElementById("tableBody-{{ id }}");
+        tbody.innerHTML = "";
+
+        if (!pageData || pageData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="{{ headers|length }}" class="text-center">No data</td></tr>`;
+            return;
+        }
+
+        pageData.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${formatTime(row[groupBy])}</td>
+                <td>${row[sectionField]}</td>
+                <td>${row[authField] ? "Authenticated" : "Anonymous"}</td>
+                <td>${row[valueField]}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderPagination() {
+        const pagDiv = document.getElementById("pagination-{{ id }}");
+        pagDiv.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        const ul = document.createElement("ul");
+        ul.className = "pagination justify-content-center";
+
+        const makeButton = (label, disabled, onClick) => {
+            const li = document.createElement("li");
+            li.className = `page-item ${disabled ? "disabled" : ""}`;
+            const a = document.createElement("a");
+            a.className = "page-link";
+            a.href = "#";
+            a.innerText = label;
+            a.onclick = e => { e.preventDefault(); if(!disabled) onClick(); };
+            li.appendChild(a);
+            return li;
+        };
+
+        ul.appendChild(makeButton("Previous", currentPage===1, ()=>{ currentPage--; render(); }));
+        const info = document.createElement("li");
+        info.className = "page-item disabled";
+        info.innerHTML = `<span class="page-link">Page ${currentPage} of ${totalPages}</span>`;
+        ul.appendChild(info);
+        ul.appendChild(makeButton("Next", currentPage===totalPages, ()=>{ currentPage++; render(); }));
+
+        pagDiv.appendChild(ul);
+    }
+
+    function buildJumpTo() {
+        const select = document.getElementById("jumpTo-{{ id }}");
+        if (!select) return; // prevent crash
+
+        select.innerHTML = "";
+
+        pages.forEach((page, index) => {
+            if (!page.length) return;
+
+            const raw = page[0][groupBy];
+
+            const option = document.createElement("option");
+            option.value = index + 1;
+            option.textContent = formatTime(raw);
+
+            if (index + 1 === currentPage) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        });
+
+        select.onchange = function() {
+            currentPage = parseInt(this.value);
+            render();
+        };
+    }
+
+    function renderChart(pageData) {
+        const ctx = document.getElementById("chart-{{ id }}").getContext("2d");
+
+        const rawLabels = [...new Set(pageData.map(r=>r[groupBy]))];
+        const labels = rawLabels.map(formatTime);
+        const keys = [...new Set(pageData.map(r=>`${r[sectionField]}|${r[authField]}`))];
+
+        const colors = [
+            "#4e79a7","#f28e2b","#e15759","#76b7b2",
+            "#59a14f","#edc949","#af7aa1","#ff9da7"
+        ];
+
+        const datasets = keys.map((key,i)=>{
+            const [section, auth] = key.split("|");
+            return {
+                label: `${section} (${auth==="true"?"Auth":"Anon"})`,
+                data: rawLabels.map(l=>{
+                    const row = pageData.find(r=>r[groupBy]===l && r[sectionField]===section && String(r[authField])===auth);
+                    return row ? row[valueField] : 0;
+                }),
+                backgroundColor: colors[i%colors.length]
+            };
+        });
+
+        if(chart) chart.destroy();
+        chart = new Chart(ctx,{
+            type:"bar",
+            data:{ labels, datasets },
+            options:{
+                responsive:true,
+                plugins:{ legend:{ position:"bottom" } },
+                scales:{
+                    x:{ title:{ display:true, text:xAxisTitle } },
+                    y:{ title:{ display:true, text:yAxisTitle }, beginAtZero:true }
+                }
+            }
+        });
+    }
+
+    function render(){
+        const pageData = pages[currentPage-1]||[];
+        renderTable(pageData);
+        renderPagination();
+        buildJumpTo();
+        renderChart(pageData);
+    }
+
+    render();
+})();
+</script>

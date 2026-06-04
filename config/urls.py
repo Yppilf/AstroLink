@@ -25,7 +25,8 @@ from django.views.static import serve
 urlpatterns = [
     path('', include('astrolink.urls', namespace="astrolink")),
     path('', include('authentication.urls', namespace="authentication")),
-    path('documents/', include('documents.urls', namespace="documents"))
+    path('documents/', include('documents.urls', namespace="documents")),
+    path('metrics/', include('metrics.urls', namespace="metrics"))
 ]
 
 if settings.DEBUG:

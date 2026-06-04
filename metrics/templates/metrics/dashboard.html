@@ -1,0 +1,34 @@
+{% extends "forum/base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Application Metrics</h2>
+    <p class="text-muted small mt-2">
+        “Unique visitors” are estimated using privacy-friendly anonymous identifiers.
+        Values are deduplicated across each time period using probabilistic counting,
+        resulting in accurate trends with a small margin of error (~1%).
+
+    </p>
+
+
+    <!-- HOURLY REQUESTS -->
+    {% include "metrics/_metrics_stats_component.html" with id="hourly-requests" title="Hourly Requests" header_class="bg-primary text-white" headers=hourly_headers data=hourly_stats_json groupBy="period_start" sectionField="section" authField="authenticated" valueField="total_requests" xAxisTitle="Hour" yAxisTitle="Requests" %}
+
+    <!-- HOURLY UNIQUE VISITORS -->
+    {% include "metrics/_metrics_stats_component.html" with id="hourly-visitors" title="Hourly Unique Visitors" header_class="bg-secondary text-white" headers=hourly_headers data=hourly_stats_json groupBy="period_start" sectionField="section" authField="authenticated" valueField="unique_visitors" xAxisTitle="Hour" yAxisTitle="Unique Visitors" %}
+
+    <!-- DAILY REQUESTS -->
+    {% include "metrics/_metrics_stats_component.html" with id="daily-requests" title="Daily Requests" header_class="bg-success text-white" headers=daily_headers data=daily_stats_json groupBy="day" sectionField="section" authField="authenticated" valueField="total_requests" xAxisTitle="Date" yAxisTitle="Requests" %}
+
+    <!-- DAILY UNIQUE VISITORS -->
+    {% include "metrics/_metrics_stats_component.html" with id="daily-visitors" title="Daily Unique Visitors" header_class="bg-success text-dark" headers=daily_headers data=daily_stats_json groupBy="day" sectionField="section" authField="authenticated" valueField="unique_visitors" xAxisTitle="Date" yAxisTitle="Unique Visitors" %}
+
+    <!-- WEEKLY REQUESTS -->
+    {% include "metrics/_metrics_stats_component.html" with id="weekly-requests" title="Weekly Requests" header_class="bg-info text-white" headers=weekly_headers data=weekly_stats_json groupBy="week" sectionField="section" authField="authenticated" valueField="total_requests" xAxisTitle="Week" yAxisTitle="Requests" %}
+
+    <!-- WEEKLY UNIQUE VISITORS -->
+    {% include "metrics/_metrics_stats_component.html" with id="weekly-visitors" title="Weekly Unique Visitors" header_class="bg-info text-dark" headers=weekly_headers data=weekly_stats_json groupBy="week" sectionField="section" authField="authenticated" valueField="unique_visitors" xAxisTitle="Week" yAxisTitle="Unique Visitors" %}
+</div>
+{% endblock %}

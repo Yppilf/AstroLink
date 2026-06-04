@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from astrolink.models import Reference, Interest, Project, Company, CaseStudy, ResearchGroup, Application, Tag
 from authentication.models import Role, User, SupervisorProfile, StudentProfile, AssociationProfile, CoordinatorProfile
 from documents.models import DocumentTemplate, TemplateField, TemplateAsset, GeneratedDocument, DocumentSigner
+from metrics.models import HourlyAggregate
 
 class Command(BaseCommand):
     help = 'Set up roles and permissions'
@@ -56,6 +57,8 @@ class Command(BaseCommand):
             ('generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),   # General creation etc
             ('lock_generateddocument', GeneratedDocument, ["create", "read", "update", "delete"]),  # Locking the document
             ('documentsigner', DocumentSigner, ["create", "read", "update", "delete"]),
+
+            ('metrics', HourlyAggregate, ["create", "read", "update", "delete"]),
         ]
 
         for perm_label, model, actions in permissions:
@@ -93,6 +96,8 @@ class Command(BaseCommand):
                 'create_documenttemplate', 'read_documenttemplate', 'update_documenttemplate', 'delete_documenttemplate',
                 'create_templatefield', 'read_templatefield', 'update_templatefield', 'delete_templatefield',
                 'create_templateasset', 'read_templateasset', 'update_templateasset', 'delete_templateasset',
+
+                'read_metrics',
             ], 
             'Programme Coordinator': [
                 'read_supervisor', 

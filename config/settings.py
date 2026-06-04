@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'permissions',
     'authentication',
     'documents',
+    'metrics',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'metrics.middleware.AuthenticatedAnalyticsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'

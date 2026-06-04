@@ -42,6 +42,10 @@ def global_permissions(request):
         has_permission(user, "read_coordinator") 
     )
 
+    can_read_metrics = (
+        has_permission(user, "read_metrics") 
+    )
+
     return {
         "can_manage_applications": can_manage_applications,
         "can_manage_companies": can_manage_companies,
@@ -51,4 +55,5 @@ def global_permissions(request):
         "can_manage_documents": can_manage_documents,
         "can_read_students": can_read_students,
         "can_manage_coordinators": can_manage_coordinators,
+        "can_read_metrics": can_read_metrics,
     }
