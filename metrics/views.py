@@ -1,7 +1,4 @@
 import json
-import pickle
-import hyperloglog
-
 from django.shortcuts import render
 from django.utils.timezone import now, timedelta
 from django.db.models import Sum
