@@ -78,7 +78,7 @@ def generic_list_data(
         try:
             field = model._meta.get_field(col)
             # BaseProfile-derived FK: annotate name for filtering/sorting
-            if field.is_relation and hasattr(field.related_model, "name"):
+            if field.is_relation and hasattr(field.related_model, "name") and hasattr(field.related_model, "user"):
                 annotations[f"{col}_name"] = Coalesce(
                     F(f"{col}__user__screen_name"), F(f"{col}__user__legal_name")
                 )
@@ -142,11 +142,19 @@ def generic_list_data(
         values = []
         for col in columns:
             val = getattr(obj, col, "")
-            if callable(val):
+            if col == "tags":
+                val = ", ".join(
+                    tag.name
+                    for tag in obj.tags.all()
+                )
+            elif callable(val):
                 val = val()
             elif hasattr(val, "__str__"):
                 val = str(val)
+            
             values.append(val)
+
+            
 
         row = {
             "values": values,
@@ -307,7 +315,7 @@ def project_list(request):
         Project.objects.all(),
         "Project",
         url_prefix="project",
-        columns=["title", "supervisor", "time_estimate", "created_at"],
+        columns=["title", "supervisor", "tags", "time_estimate", "created_at"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -325,7 +333,7 @@ def project_list_data(request):
         Project.objects.all(),
         object_name="Project",
         url_prefix="project",
-        columns=["title", "supervisor", "time_estimate", "created_at"],
+        columns=["title", "supervisor", "tags", "time_estimate", "created_at"],
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
@@ -499,7 +507,7 @@ def casestudy_list(request):
         CaseStudy.objects.all(),
         "Case Study",
         url_prefix="casestudy",
-        columns=["title", "company_name", "time_estimate"],
+        columns=["title", "company_name", "tags", "time_estimate"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -522,7 +530,7 @@ def casestudy_list_data(request):
         qs,
         object_name="Case Study",
         url_prefix="casestudy",
-        columns=["title", "company_name", "time_estimate"],  # match annotated field
+        columns=["title", "company_name", "tags", "time_estimate"],  # match annotated field
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
