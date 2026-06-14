@@ -3,6 +3,7 @@ from authentication.models import User, SupervisorProfile, StudentProfile, Assoc
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from pathlib import Path
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -179,3 +180,29 @@ class IgnoredApplication(models.Model):
     class Meta:
         unique_together = ("user", "application")
 
+class Attachment(models.Model):
+    project = models.ForeignKey(Project,on_delete=models.CASCADE,related_name="attachments",null=True,blank=True)
+    case_study = models.ForeignKey(CaseStudy,on_delete=models.CASCADE,related_name="attachments",null=True,blank=True)
+
+    file = models.FileField(upload_to="attachments/")
+    original_filename = models.CharField(max_length=255)
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.original_filename
+    
+    @property
+    def is_image(self):
+        return (
+            Path(self.original_filename)
+            .suffix.lower()
+            in {
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".webp",
+                ".svg",
+            }
+        )

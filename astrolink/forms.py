@@ -14,6 +14,24 @@ class BootstrapMultiSelectPills(forms.SelectMultiple):
             default_attrs.update(attrs)
         super().__init__(attrs=default_attrs)
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+
+        if isinstance(data, (list, tuple)):
+            return [
+                super(MultipleFileField, self).clean(d, initial)
+                for d in data
+            ]
+
+        return [super().clean(data, initial)]
+
 # Helper email validator
 def validate_email(value):
     regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
@@ -79,6 +97,8 @@ class ProjectForm(forms.ModelForm):
             "data-placeholder": "Select tags…"
         })
     )
+
+    attachments = MultipleFileField(required=False)
 
     class Meta:
         model = Project
@@ -156,6 +176,8 @@ class CaseStudyForm(forms.ModelForm):
             "data-placeholder": "Select tags…"
         })
     )
+
+    attachments = MultipleFileField(required=False)
 
     class Meta:
         model = CaseStudy

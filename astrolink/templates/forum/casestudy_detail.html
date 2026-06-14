@@ -73,4 +73,66 @@
     {% endif %}
 
 </div>
+
+{% if case_study.attachments.exists %}
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5>Attachments</h5>
+        <hr>
+
+        <ul class="list-group">
+            {% for attachment in case_study.attachments.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                    <a href="{{ attachment.file.url }}"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        [{{ attachment.id }}] {{ attachment.original_filename }}
+                    </a>
+
+                    <small class="text-muted">
+                        {{ attachment.uploaded_at|date:"Y-m-d" }}
+                        {% if can_manage_attachments %}
+                            <form method="post"
+                                action="{% url 'astrolink:attachment_delete' attachment.pk %}"
+                                class="attachment-delete-form d-inline">
+
+                                {% csrf_token %}
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                            </form>
+                        {% endif %}  
+                    </small>
+
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<script>
+document.querySelectorAll(".attachment-delete-form").forEach(form => {
+    form.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        Swal.fire({
+            title: "Delete attachment?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete",
+            confirmButtonColor: "#dc3545",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

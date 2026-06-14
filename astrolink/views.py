@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import (
-    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag, IgnoredApplication
+    Project, Company, CaseStudy, ResearchGroup, Reference, Application, Interest, Tag, IgnoredApplication, Attachment
 )
 from authentication.models import SupervisorProfile, StudentProfile, User, CoordinatorProfile
 from .forms import (
@@ -176,7 +176,24 @@ def generic_form_view(request, form_class, instance, form_title, url_prefix, for
             form = form_class(request.POST, request.FILES, instance=instance)
 
         if form.is_valid():
-            form.save()
+            obj = form.save()
+
+            uploaded_files = request.FILES.getlist("attachments")
+
+            for uploaded_file in uploaded_files:
+
+                attachment_kwargs = {
+                    "file": uploaded_file,
+                    "original_filename": uploaded_file.name,
+                }
+
+                if isinstance(obj, Project):
+                    attachment_kwargs["project"] = obj
+
+                elif isinstance(obj, CaseStudy):
+                    attachment_kwargs["case_study"] = obj
+
+                Attachment.objects.create(**attachment_kwargs)
 
             if success_message:
                 messages.success(request, success_message)
@@ -348,11 +365,13 @@ def project_delete(request, pk):
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
     can_apply = has_permission(request.user, "create_application")
+    can_manage_attachments = project.supervisor.user == request.user
 
     return render(request, "forum/project_detail.html", {
         "project": project,
         "can_apply": can_apply,
         "page_title": project.title,
+        "can_manage_attachments": can_manage_attachments,
     })
 
 # -----------------------------------------------
@@ -565,11 +584,13 @@ def casestudy_delete(request, pk):
 def casestudy_detail(request, pk):
     case_study = get_object_or_404(CaseStudy, pk=pk)
     can_apply = has_permission(request.user, "create_application")
+    can_manage_attachments = case_study.company.association.user == request.user
 
     return render(request, "forum/casestudy_detail.html", {
         "case_study": case_study,
         "can_apply": can_apply,
         "page_title": f"{case_study.title}",
+        "can_manage_attachments": can_manage_attachments,
     })
 
 # -----------------------------------------------
@@ -1346,3 +1367,35 @@ def coordinator_form(request, pk):
         f"Configure {instance.user.display_name()}",
         url_prefix="coordinator",
     )
+
+@require_POST
+def attachment_delete(request, pk):
+    attachment = get_object_or_404(Attachment, pk=pk)
+
+    if attachment.project:
+        if attachment.project.supervisor.user != request.user:
+            return HttpResponseForbidden(
+                "You are not allowed to delete this attachment."
+            )
+
+        redirect_url = "astrolink:project_detail"
+        redirect_pk = attachment.project.pk
+
+    elif attachment.case_study:
+        if attachment.case_study.company.association.user != request.user:
+            return HttpResponseForbidden(
+                "You are not allowed to delete this attachment."
+            )
+
+        redirect_url = "astrolink:casestudy_detail"
+        redirect_pk = attachment.case_study.pk
+
+    else:
+        return HttpResponseForbidden("Invalid attachment.")
+
+    attachment.file.delete(save=False)
+    attachment.delete()
+
+    messages.success(request, "Attachment deleted.")
+
+    return redirect(redirect_url, pk=redirect_pk)

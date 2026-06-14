@@ -90,4 +90,7 @@ urlpatterns = [
     path("coordinators/update/<int:pk>/", views.coordinator_form, name="coordinator_update"),
     path("coordinators/<int:pk>/", views.coordinator_detail, name="coordinator_detail"),
     path("coordinators/data/", views.coordinator_list_data, name="coordinator_list_data"),
+
+    # ATTACHMENTS
+    path("attachments/<int:pk>/delete/", views.attachment_delete, name="attachment_delete"),
 ]
