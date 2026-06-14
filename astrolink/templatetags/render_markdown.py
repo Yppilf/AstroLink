@@ -14,15 +14,16 @@ ALLOWED_TAGS = set(_base_allowed_tags)
 ALLOWED_TAGS.update({
     'p', 'pre', 'code', 'span', 'div', 'br', 'hr',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'strong', 'em', 'blockquote'
+    'ul', 'ol', 'li', 'strong', 'em', 'blockquote',
+    'a'
 })
 
 # --- Safe handling of allowed attributes ---
 # Allow specific HTML attributes
 ALLOWED_ATTRIBUTES = {
-    '*': ['class', 'style'],
     'span': ['class'],
     'code': ['class'],
+    'a': ['href', 'title', 'target', 'rel'],
 }
 
 @register.filter(name='render')
@@ -42,7 +43,19 @@ def render_markdown_safe(text):
         html,
         tags=list(ALLOWED_TAGS),
         attributes=ALLOWED_ATTRIBUTES,
+        protocols=['http', 'https', 'mailto'],
         strip=True                         # Strip disallowed tags instead of escaping
+    )
+
+    # Make links open in a new tab
+    def set_target(attrs, new=False):
+        attrs[(None, "target")] = "_blank"
+        attrs[(None, "rel")] = "noopener noreferrer"
+        return attrs
+
+    sanitized = bleach.linkify(
+        sanitized,
+        callbacks=[set_target]
     )
 
     return sanitized
