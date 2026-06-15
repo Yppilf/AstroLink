@@ -168,3 +168,77 @@ When creating projects or case studies:
 * Clearly communicate expectations and requirements
 
 Well-structured opportunities are easier for students to discover and generally result in higher-quality applications.
+
+## Attachments
+
+Projects and case studies may include file attachments that provide additional context, supporting materials or reference documents.
+
+Attachments are displayed separately from the main description and can be downloaded directly from the opportunity page.
+
+## Supported Files
+
+Attachments may consist of any file type supported by the platform, including:
+
+* Images
+* PDF documents
+* Microsoft Word documents
+* Microsoft PowerPoint presentations
+* Microsoft Excel spreadsheets
+* Archives and supplementary files
+
+This allows creators to provide materials that would be difficult or impractical to include directly within the opportunity description.
+
+## Attachment Information
+
+Each attachment displays:
+
+* File name
+* Upload date
+
+Attachments can be opened or downloaded directly from the opportunity page.
+
+## Referencing Attachments
+
+Attachments may be referenced from within the opportunity description using their attachment identifier.
+
+Attachment identifiers are displayed in the attachment list and can be used to create references to supporting material elsewhere on the page.
+
+This allows creators to direct readers to relevant files when describing specific requirements, datasets, figures or supplementary documentation.
+
+## Typical Uses
+
+Attachments are commonly used for:
+
+* Research proposals
+* Project briefs
+* Company documentation
+* Technical specifications
+* Datasets
+* Literature references
+* Presentation slides
+* Supporting images and diagrams
+
+Providing supporting files can help applicants better understand the opportunity before submitting an application.
+
+## Managing Attachments
+
+Attachments are managed by the owner of the opportunity.
+
+For projects, attachments may be managed by the supervising researcher.
+
+For case studies, attachments may be managed by authorized representatives of the responsible association.
+
+Attachments can be added during creation or editing of an opportunity and may be removed when they are no longer required.
+
+## Best Practices
+
+When adding attachments:
+
+* Use descriptive file names
+* Remove outdated files when possible
+* Ensure uploaded documents are relevant to the opportunity
+* Reference important files within the description
+* Avoid uploading duplicate materials
+* Keep supporting documentation up to date
+
+Well-organized attachments make opportunities easier to understand and reduce uncertainty for prospective applicants.
