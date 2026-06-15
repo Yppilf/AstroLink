@@ -102,7 +102,7 @@ class ProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ['title', 'description', 'time_estimate', 'tags']
+        fields = ['title', 'description', 'time_estimate', "is_open", 'tags']
         widgets = {
             'description': RichTextWidget(),
         }
@@ -188,6 +188,7 @@ class CaseStudyForm(forms.ModelForm):
             "description",
             "revenue_split_notes",
             "time_estimate",
+            "is_open",
             "tags"
         ]
         widgets = {

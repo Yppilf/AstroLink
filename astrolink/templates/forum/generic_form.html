@@ -31,7 +31,11 @@
             {% for field in form %}
                 <div class="mb-3">
                     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
+                    {% if field.field.widget.input_type == "checkbox" %}
+                        {{ field }}
+                    {% else %}
+                        {{ field|add_class:"form-control" }}
+                    {% endif %}
                     {% if field.help_text %}
                         <div class="form-text">{{ field.help_text }}</div>
                     {% endif %}
@@ -46,7 +50,11 @@
                 {% for field in extra_form %}
                     <div class="mb-3">
                         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
+                        {% if field.field.widget.input_type == "checkbox" %}
+                            {{ field }}
+                        {% else %}
+                            {{ field|add_class:"form-control" }}
+                        {% endif %}
                         {% if field.help_text %}
                             <div class="form-text">{{ field.help_text }}</div>
                         {% endif %}

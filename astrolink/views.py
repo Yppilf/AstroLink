@@ -315,7 +315,7 @@ def project_list(request):
         Project.objects.all(),
         "Project",
         url_prefix="project",
-        columns=["title", "supervisor", "tags", "time_estimate", "created_at"],
+        columns=["title", "supervisor", "tags", "time_estimate", "is_open", "created_at"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -333,7 +333,7 @@ def project_list_data(request):
         Project.objects.all(),
         object_name="Project",
         url_prefix="project",
-        columns=["title", "supervisor", "tags", "time_estimate", "created_at"],
+        columns=["title", "supervisor", "tags", "time_estimate", "is_open", "created_at"],
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
@@ -372,7 +372,7 @@ def project_delete(request, pk):
     ownership_checker=owns_project)
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
-    can_apply = has_permission(request.user, "create_application")
+    can_apply = has_permission(request.user, "create_application") and project.is_open
     can_manage_attachments = project.supervisor.user == request.user
 
     return render(request, "forum/project_detail.html", {
@@ -507,7 +507,7 @@ def casestudy_list(request):
         CaseStudy.objects.all(),
         "Case Study",
         url_prefix="casestudy",
-        columns=["title", "company_name", "tags", "time_estimate"],
+        columns=["title", "company_name", "tags", "time_estimate", "is_open"],
         can_create=can_create,
         can_view=can_view,
         can_update=can_update,
@@ -530,7 +530,7 @@ def casestudy_list_data(request):
         qs,
         object_name="Case Study",
         url_prefix="casestudy",
-        columns=["title", "company_name", "tags", "time_estimate"],  # match annotated field
+        columns=["title", "company_name", "tags", "time_estimate", "is_open"],  # match annotated field
         can_view=can_view,
         can_update=can_update,
         can_delete=can_delete,
@@ -591,7 +591,7 @@ def casestudy_delete(request, pk):
     ownership_checker=owns_case_study)
 def casestudy_detail(request, pk):
     case_study = get_object_or_404(CaseStudy, pk=pk)
-    can_apply = has_permission(request.user, "create_application")
+    can_apply = has_permission(request.user, "create_application") and case_study.is_open
     can_manage_attachments = case_study.company.association.user == request.user
 
     return render(request, "forum/casestudy_detail.html", {

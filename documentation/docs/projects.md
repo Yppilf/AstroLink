@@ -68,6 +68,10 @@ This makes it possible to create rich and detailed opportunity descriptions.
 
 An estimate of the expected workload or duration.
 
+### Is Open
+
+Whether the project or case study allows applications or is just for viewing.
+
 ### Tags
 
 Tags are used to categorize opportunities and improve discoverability.

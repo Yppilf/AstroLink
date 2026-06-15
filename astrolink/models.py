@@ -42,6 +42,7 @@ class Project(models.Model):
     time_estimate = models.CharField(max_length=16, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now_add=True)
+    is_open = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="projects")
 
     def __str__(self):
@@ -89,6 +90,7 @@ class CaseStudy(models.Model):
     revenue_split_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated_at = models.DateTimeField(auto_now_add=True)
+    is_open = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="case_studies")
 
     def __str__(self):
