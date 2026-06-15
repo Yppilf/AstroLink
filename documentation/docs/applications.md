@@ -62,7 +62,7 @@ Applications follow a structured lifecycle:
 
 ### Confirmation Requirement
 
-Once an application has been marked as **ACCEPTED**, the student must confirm the application within **14 days**. If the deadline is exceeded, the application can no longer be confirmed.
+Once an application has been marked as **ACCEPTED**, the student must confirm the application within a certain number of days specified upon acceptance, with the default being **14 days**. If the deadline is exceeded, the application can no longer be confirmed.
 
 ---
 
@@ -99,7 +99,8 @@ Once submitted, applications are reviewed by the responsible party:
 - Review applications
 - Accept or reject applications
 - Provide a mandatory comment when making a decision
-- Assign acceptance timestamps
+- Assign confirmation deadline
+- Toggle closing of oppurtunity upon confirmation
 - Optionally trigger document creation during acceptance
 
 ### Acceptance
@@ -133,6 +134,7 @@ Once confirmed:
 - Status is set to **CONFIRMED**
 - Confirmation timestamp is recorded
 - The application is considered finalized
+- If set, the project/case study will no longer allow applications
 
 ---
 

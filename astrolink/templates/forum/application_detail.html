@@ -163,6 +163,26 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <div class="mb-3" id="confirmationDaysContainer">
+                            <label class="form-label">
+                                Student confirmation deadline (days)
+                            </label>
+
+                            <input type="number" name="confirmation_days" class="form-control" min="1" value="{{ default_confirmation_days }}">
+
+                            <div class="form-text">
+                                Number of days the student has to confirm.
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="closeOnConfirm" name="close_on_confirm">
+
+                            <label class="form-check-label" for="closeOnConfirm">
+                                Close this opportunity when the student confirms
+                            </label>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -210,12 +230,18 @@ document.addEventListener("DOMContentLoaded", function() {
     document.addEventListener("DOMContentLoaded", function () {
         const statusSelect = document.querySelector("select[name='status']");
         const templateSelect = document.getElementById("documentTemplateSelect");
+        const confirmationDays = document.getElementById("confirmationDaysContainer");
+        const closeOnConfirm = document.getElementById("closeOnConfirm");
 
         function toggleTemplateField() {
             if (statusSelect.value === "ACCEPTED") {
                 templateSelect.parentElement.style.display = "block";
+                closeOnConfirm.parentElement.style.display = "block";
+                confirmationDays.style.display = "block";
             } else {
                 templateSelect.parentElement.style.display = "none";
+                closeOnConfirm.parentElement.style.display = "none";
+                confirmationDays.style.display = "none";
             }
         }
 

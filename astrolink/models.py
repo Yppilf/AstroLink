@@ -126,6 +126,8 @@ class Application(models.Model):
     accepted_at = models.DateTimeField(null=True, blank=True)
     rejected_at = models.DateTimeField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmation_deadline_days = models.PositiveIntegerField(default=settings.APPLICATION_CONFIRMATION_DAYS)
+    close_on_confirm = models.BooleanField(default=False, help_text="Automatically close the project/case study for applications when the student confirms.")
     supervisor_comment = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -161,7 +163,7 @@ class Application(models.Model):
     def confirmation_deadline(self):
         if not self.accepted_at:
             return None
-        return self.accepted_at + timedelta(days=settings.APPLICATION_CONFIRMATION_DAYS)
+        return self.accepted_at + timedelta(days=self.confirmation_deadline_days)
     
     @property
     def is_expired(self):

@@ -27,6 +27,7 @@ from documents.models import DocumentTemplate, GeneratedDocument
 from authentication.forms import CoordinatorProfileForm
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 # A helper that avoids repeating template logic:
 def generic_list_view(
@@ -908,7 +909,8 @@ def application_detail(request, pk):
         "related_applications": related_applications,
         "templates": templates,
         "documents": application.documents.all(),
-        "user_role": str(request.user.role)
+        "user_role": str(request.user.role),
+        "default_confirmation_days": settings.APPLICATION_CONFIRMATION_DAYS,
     })
 
 @external_user_permissions_required(
@@ -943,6 +945,18 @@ def application_status_update(request, pk):
             app.supervisor_comment = supervisor_comment
             if new_status == "ACCEPTED":
                 app.accepted_at = timezone.now()
+
+                app.close_on_confirm = (request.POST.get("close_on_confirm") == "on")
+
+                confirmation_days = request.POST.get("confirmation_days")
+
+                try:
+                    confirmation_days = int(confirmation_days)
+                except (TypeError, ValueError):
+                    confirmation_days = (settings.APPLICATION_CONFIRMATION_DAYS)
+                confirmation_days = max(1,confirmation_days)
+
+                app.confirmation_deadline_days = confirmation_days
 
                 template_id = request.POST.get("document_template")
 
@@ -997,6 +1011,15 @@ def application_status_update(request, pk):
 
             app.status = "CONFIRMED"
             app.confirmed_at = timezone.now()
+
+            if app.close_on_confirm:
+                if app.project:
+                    app.project.is_open = False
+                    app.project.save(update_fields=["is_open"])
+
+                elif app.case_study:
+                    app.case_study.is_open = False
+                    app.case_study.save(update_fields=["is_open"])
             app.save()
 
             messages.success(request, "Application confirmed!")
