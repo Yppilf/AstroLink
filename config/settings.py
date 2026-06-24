@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import base64
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,8 +31,9 @@ SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
 CONTRACT_AUTHENTICITY_KEY = os.getenv("CONTRACT_AUTHENTICITY_KEY")
 is_production = os.getenv("DJANGO_ENV") == "production"
 
-BACKUP_ENCRYPTION_KEY  = os.environ.get("DJANGO_BACKUP_ENCRYPTION_KEY")
-BACKUP_ENCRYPTION_KEY  = BACKUP_ENCRYPTION_KEY.encode()
+BACKUP_ENCRYPTION_KEY = base64.b64decode(
+    os.environ["DJANGO_BACKUP_ENCRYPTION_KEY"]
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not is_production
