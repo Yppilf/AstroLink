@@ -20,7 +20,7 @@ def sync_signers(doc, context_data):
 
         if user_id:
             if not existing:
-                # ➕ New signer
+                # New signer
                 DocumentSigner.objects.create(
                     document=doc,
                     field=field,
